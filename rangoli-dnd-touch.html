@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rangoli Maker – Touch Friendly</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{background:#f1f1f1;padding:8px 12px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+  .board { display:grid; grid-template-columns:repeat(5,64px); gap:10px; justify-content:center; margin:12px 0 }
+  .slot, .dot { width:64px; height:64px; border-radius:50% }
+  .slot { border:2px dashed #ccc; background:#fff }
+  .palette { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:10px }
+  .dot { box-shadow:0 8px 16px rgba(0,0,0,.12); touch-action:none; }
+  .dragging { position:fixed; z-index:10; transform:translate(-50%,-50%); pointer-events:none; }
+</style>
+<body>
+<div class="wrap">
+  <h1>🌼 Rangoli Maker – Drag the matching colors</h1>
+  <p><b>Instruction:</b> Touch & hold a dot, drag over a slot of the <b>same color</b>, release to place. Fill all 10.</p>
+  <div class="hud">
+    <span class="pill">⏱️ <b id="t">60</b>s</span>
+    <span class="pill">⭐ <b id="s">0</b>/10</span>
+    <span class="pill">🏆 <b id="b">0</b></span>
+    <button id="start" class="btn">Start</button>
+    <span class="pill"><button id="soundBtn" class="btn">🔊 Sound: On</button><button id="speak" class="btn">🗣️ Speak</button></span>
+  </div>
+  <div id="board" class="board" aria-label="rangoli slots"></div>
+  <div id="palette" class="palette" aria-label="color palette"></div>
+  
+<footer style="margin-top:16px;color:#666;font-size:12px;text-align:center">
+  Created &amp; designed by <b>Animesh</b> • Works offline • No tracking
+</footer>
+
+  
+<script>
+let AC=null, soundOn=true;
+function ensureAC(){ try{ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended'){ AC.resume(); } }catch(e){} }
+function beep(freq=880, dur=0.07, vol=0.08){ try{ ensureAC(); if(!AC) return; const o=AC.createOscillator(); const g=AC.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.value=vol; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);}catch(e){} }
+function blipGood(){ if(soundOn) beep(920,0.08,0.1); }
+function blipBad(){ if(soundOn) beep(220,0.1,0.1); }
+function pop(){ if(soundOn) beep(660,0.05,0.12); }
+function speakLine(text){ try{ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang='en-IN'; u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} }
+function toggleSound(btn){ soundOn=!soundOn; if(btn){ btn.textContent = soundOn ? '🔊 Sound: On' : '🔇 Sound: Off'; } }
+</script>
+
+<script>
+const COLORS=['#e63946','#ffd166','#2a9d8f','#277da1','#8e5cf5','#f77f00','#06d6a0','#ff6b6b','#8ac926','#8338ec'];
+const ROUND=60;
+let secs=ROUND, score=0, playing=false, timer=null;
+const board = document.getElementById('board');
+const palette = document.getElementById('palette');
+const bEl = document.getElementById('b');
+const guide='Drag and match each colored dot to a slot of the same color.';
+document.getElementById('speak').addEventListener('click',()=>speakLine(guide));
+document.getElementById('soundBtn').addEventListener('click',e=>toggleSound(e.currentTarget));
+try{ bEl.textContent=localStorage.getItem('rg_best_touch')||0; }catch(e){ bEl.textContent='0'; }
+
+let dragging=null, orig=null;
+
+function makeSlots(){ board.innerHTML=''; for(let i=0;i<10;i++){ const c=COLORS[i]; const slot=document.createElement('div'); slot.className='slot'; slot.dataset.color=c; board.appendChild(slot); } }
+function makePalette(){ palette.innerHTML=''; const arr=[...COLORS].sort(()=>Math.random()-0.5); arr.forEach(c=>{ const d=document.createElement('div'); d.className='dot'; d.style.background=c; d.dataset.color=c; d.addEventListener('pointerdown', startDrag, {passive:true}); palette.appendChild(d); }); }
+
+function start(){ if(playing) return; playing=true; secs=ROUND; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs; makeSlots(); makePalette(); speakLine(guide); blipGood();
+  if(timer) clearInterval(timer); timer=setInterval(()=>{ secs--; document.getElementById('t').textContent=secs; if(secs<=0) finish(); },1000);
+}
+function finish(){ playing=false; if(timer){ clearInterval(timer); timer=null; } try{ const best=Number(localStorage.getItem('rg_best_touch')||0); if(score>best){ localStorage.setItem('rg_best_touch',score); bEl.textContent=score; } }catch(e){} alert('Great job! You placed '+score+' colors.'); }
+
+document.getElementById('start').addEventListener('click', start);
+
+function startDrag(e){ if(!playing) return; dragging = e.currentTarget.cloneNode(true); dragging.classList.add('dragging'); dragging.style.left = e.clientX+'px'; dragging.style.top  = e.clientY+'px'; document.body.appendChild(dragging); orig = { el: e.currentTarget, color: e.currentTarget.dataset.color }; e.currentTarget.style.opacity = '0.4'; window.addEventListener('pointermove', onMove, {passive:true}); window.addEventListener('pointerup', onUp, {once:true}); }
+function onMove(e){ if(!dragging) return; dragging.style.left = e.clientX+'px'; dragging.style.top  = e.clientY+'px'; }
+function elementAtPoint(x,y){ if(!dragging) return null; dragging.style.display='none'; const el = document.elementFromPoint(x,y); dragging.style.display=''; return el; }
+function onUp(e){ window.removeEventListener('pointermove', onMove); if(!dragging){ return; } const dropEl = elementAtPoint(e.clientX, e.clientY);
+  const slot = dropEl && (dropEl.classList && dropEl.classList.contains('slot') ? dropEl : dropEl && dropEl.parentElement && dropEl.parentElement.classList.contains('slot') ? dropEl.parentElement : null);
+  if(slot && slot.dataset.color === orig.color && !slot.dataset.filled){ slot.style.background = orig.color; slot.dataset.filled = '1'; score++; document.getElementById('s').textContent=score; orig.el.remove(); blipGood(); if(score>=10) { finish(); } }
+  else{ orig.el.style.opacity='1'; blipBad(); }
+  dragging.remove(); dragging=null; orig=null;
+}
+</script>
+</div></body></html>

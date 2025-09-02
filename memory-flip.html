@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memory Flip – Puja Icons</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .card{aspect-ratio:1/1;border-radius:12px;display:grid;place-items:center;background:#c1121f;color:#fff;font-size:40px;user-select:none;cursor:pointer}
+  .open{background:#ffe3a3;color:#222}
+  .pill{background:#f1f1f1;padding:8px 12px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+</style>
+<body><div class="wrap">
+  <h1>🧠 Memory Flip – Puja Icons</h1>
+  <p><b>Instruction:</b> Tap cards to reveal and match pairs. Fewer moves is better.</p>
+  <div class="hud"><span class="pill">Moves: <b id="m">0</b></span><span class="pill">🏆 Best (fewest): <b id="b">-</b></span><button id="start" class="btn">Start</button><span class="pill"><button id="soundBtn" class="btn">🔊 Sound: On</button><button id="speak" class="btn">🗣️ Speak</button></span></div>
+  <div id="grid" class="grid" aria-label="memory cards grid"></div>
+  
+<footer style="margin-top:16px;color:#666;font-size:12px;text-align:center">
+  Created &amp; designed by <b>Animesh</b> • Works offline • No tracking
+</footer>
+
+  
+<script>
+let AC=null, soundOn=true;
+function ensureAC(){ try{ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended'){ AC.resume(); } }catch(e){} }
+function beep(freq=880, dur=0.07, vol=0.08){ try{ ensureAC(); if(!AC) return; const o=AC.createOscillator(); const g=AC.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.value=vol; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);}catch(e){} }
+function blipGood(){ if(soundOn) beep(920,0.08,0.1); }
+function blipBad(){ if(soundOn) beep(220,0.1,0.1); }
+function pop(){ if(soundOn) beep(660,0.05,0.12); }
+function speakLine(text){ try{ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang='en-IN'; u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} }
+function toggleSound(btn){ soundOn=!soundOn; if(btn){ btn.textContent = soundOn ? '🔊 Sound: On' : '🔇 Sound: Off'; } }
+</script>
+
+<script>
+const ICONS=['🪔','🕉️','🎉','🥁','🪘','🪙','🧧','🌸'];
+let first=null, second=null, lock=false, moves=0, matched=0, best=null;
+const grid=document.getElementById('grid'); const m=document.getElementById('m'), b=document.getElementById('b');
+const guide='Flip two cards to find a matching pair. Try to remember where they are!';
+document.getElementById('speak').addEventListener('click',()=>speakLine(guide));
+document.getElementById('soundBtn').addEventListener('click',e=>toggleSound(e.currentTarget));
+
+try{ best=Number(localStorage.getItem('mf_best')||0)||null; }catch(e){ best=null; } b.textContent=best?best:'-';
+
+function start(){ grid.innerHTML=''; moves=0; matched=0; m.textContent=0; first=second=null; lock=false; speakLine(guide); blipGood();
+  const deck=[...ICONS,...ICONS].sort(()=>Math.random()-0.5);
+  deck.forEach(sym=>{ const c=document.createElement('div'); c.className='card'; c.dataset.sym=sym; c.textContent='?';
+    c.addEventListener('pointerdown',()=>flip(c),{passive:true}); grid.appendChild(c); });
+}
+function flip(c){ if(lock||c.classList.contains('open')) return; c.classList.add('open'); c.textContent=c.dataset.sym; pop();
+  if(!first){ first=c; return; } second=c; lock=true; moves++; m.textContent=moves;
+  if(first.dataset.sym===second.dataset.sym){ matched+=2; blipGood(); first=null; second=null; lock=false;
+    if(matched===ICONS.length*2){ if(!best || moves<best){ try{ localStorage.setItem('mf_best',moves); }catch(e){} b.textContent=moves; } alert('Great memory! Moves: '+moves); }
+  } else { blipBad(); setTimeout(()=>{ first.classList.remove('open'); second.classList.remove('open'); first.textContent='?'; second.textContent='?'; first=null; second=null; lock=false; }, 650); }
+}
+document.getElementById('start').addEventListener('click', start);
+</script>
+</div></body></html>

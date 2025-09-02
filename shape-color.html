@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shape + Color Match (Kids)</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .cell{aspect-ratio:1/1;border-radius:12px;display:grid;place-items:center;background:#fff;border:1px solid #eee}
+  .shape{width:70%;height:70%}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .pill{background:#f1f1f1;padding:8px 12px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+  .tiny{font-size:12px;color:#666}
+</style>
+<body><div class="wrap">
+  <h1>🔺 Shape + Color Match</h1>
+  <p><b>Instruction:</b> Tap any shape that matches the exact <em>color + shape</em> shown. At least 3 targets are guaranteed. Wrong tap −1.</p>
+  <div class="hud">
+    <span class="pill">⏱️ <b id="t">45</b>s</span>
+    <span class="pill">⭐ <b id="s">0</b></span>
+    <span class="pill">🏆 <b id="b">0</b></span>
+    <button id="start" class="btn">Start</button>
+    <span class="pill"><button id="soundBtn" class="btn">🔊 Sound: On</button><button id="speak" class="btn">🗣️ Speak</button></span>
+  </div>
+  <p>Find: <b id="need">RED TRIANGLE</b></p>
+  <div id="board" class="grid" aria-label="shapes grid"></div>
+  <p class="tiny">New target every 5 hits.</p>
+  
+<footer style="margin-top:16px;color:#666;font-size:12px;text-align:center">
+  Created &amp; designed by <b>Animesh</b> • Works offline • No tracking
+</footer>
+
+  
+<script>
+let AC=null, soundOn=true;
+function ensureAC(){ try{ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended'){ AC.resume(); } }catch(e){} }
+function beep(freq=880, dur=0.07, vol=0.08){ try{ ensureAC(); if(!AC) return; const o=AC.createOscillator(); const g=AC.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.value=vol; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);}catch(e){} }
+function blipGood(){ if(soundOn) beep(920,0.08,0.1); }
+function blipBad(){ if(soundOn) beep(220,0.1,0.1); }
+function pop(){ if(soundOn) beep(660,0.05,0.12); }
+function speakLine(text){ try{ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang='en-IN'; u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} }
+function toggleSound(btn){ soundOn=!soundOn; if(btn){ btn.textContent = soundOn ? '🔊 Sound: On' : '🔇 Sound: Off'; } }
+</script>
+
+<script>
+const COLORS=[['RED','#e63946'],['YELLOW','#ffd166'],['GREEN','#2a9d8f'],['BLUE','#277da1'],['PURPLE','#8e5cf5']];
+const SHAPES=['TRIANGLE','SQUARE','CIRCLE','STAR'];
+const ROUND=45, CELLS=12, TARGET_MIN=3;
+let secs=ROUND, score=0, best=Number(localStorage.getItem('sc_best')||0), playing=false, target=null, timer=null;
+
+const guide='Find and tap shapes that match the color and the shape I name. There are always correct answers on the board.';
+document.getElementById('speak').addEventListener('click',()=>speakLine(guide));
+document.getElementById('soundBtn').addEventListener('click',e=>toggleSound(e.currentTarget));
+
+const t=document.getElementById('t'), s=document.getElementById('s'), b=document.getElementById('b'), board=document.getElementById('board'), need=document.getElementById('need'); b.textContent=best;
+function pickTarget(){ const c=COLORS[Math.floor(Math.random()*COLORS.length)], sh=SHAPES[Math.floor(Math.random()*SHAPES.length)]; target={cname:c[0],cval:c[1],shape:sh}; need.textContent=target.cname+' '+target.shape; }
+function cellFor(shapeName,color){ const n=document.createElement('div'); n.className='cell'; const sh=document.createElement('div'); sh.className='shape';
+  if(shapeName==='CIRCLE'){ sh.style.borderRadius='50%'; sh.style.background=color; }
+  if(shapeName==='SQUARE'){ sh.style.borderRadius='12%'; sh.style.background=color; }
+  if(shapeName==='TRIANGLE'){ sh.style.width='0'; sh.style.height='0'; sh.style.borderLeft='35% solid transparent'; sh.style.borderRight='35% solid transparent'; sh.style.borderBottom='60% solid '+color; }
+  if(shapeName==='STAR'){ sh.style.clipPath='polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)'; sh.style.background=color; }
+  n.appendChild(sh);
+  n.addEventListener('pointerdown',()=>{ if(!playing) return; const isT=(shapeName===target.shape && color===target.cval); if(isT){ score++; s.textContent=score; blipGood(); } else { score=Math.max(0,score-1); blipBad(); } if(score>0 && score%5===0){ pickTarget(); buildBoard(); } },{passive:true});
+  return n; }
+function buildBoard(){ board.innerHTML=''; for(let i=0;i<TARGET_MIN;i++) board.appendChild(cellFor(target.shape,target.cval));
+  for(let i=TARGET_MIN;i<CELLS;i++){ let sc=COLORS[Math.floor(Math.random()*COLORS.length)], sh=SHAPES[Math.floor(Math.random()*SHAPES.length)]; if(sc[1]===target.cval && sh===target.shape) sh=SHAPES[(SHAPES.indexOf(sh)+1)%SHAPES.length]; board.appendChild(cellFor(sh, sc[1])); }
+  const nodes=[...board.children]; for(let i=nodes.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); board.appendChild(nodes[j]); } }
+function start(){ if(playing) return; playing=true; secs=ROUND; score=0; s.textContent=0; t.textContent=secs; pickTarget(); buildBoard(); speakLine(guide); blipGood();
+  timer=setInterval(()=>{secs--; t.textContent=secs; if(secs<=0) stop();},1000); }
+function stop(){ playing=false; clearInterval(timer); timer=null; if(score>best){ localStorage.setItem('sc_best',score); b.textContent=score; } alert('Time! Score: '+score); }
+document.getElementById('start').addEventListener('click',start);
+</script>
+</div></body></html>

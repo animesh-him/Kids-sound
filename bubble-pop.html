@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rosogolla Bubble Pop</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .stage{position:relative;aspect-ratio:9/16;background:linear-gradient(180deg,#ffe9d2,#fff7f0);border-radius:16px;border:1px solid #f2dcca;overflow:hidden}
+  .bub{position:absolute;width:80px;height:80px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,#fff 0 18px,transparent 19px),
+               radial-gradient(circle at 60% 60%,#fff 0 12px,transparent 13px),
+               radial-gradient(circle at 50% 50%,#e63946 0,#c1121f 60%,#8d0f19 100%);
+    box-shadow:0 8px 24px rgba(193,18,31,.35)}
+  .hud{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .pill{background:#f1f1f1;padding:8px 12px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;background:#c1121f;color:#fff;font-weight:700;cursor:pointer}
+  .tiny{font-size:12px;color:#666}
+</style>
+<body><div class="wrap">
+  <h1>🍡 Rosogolla Bubble Pop</h1>
+  <p><b>Instruction:</b> Tap rosogollas before they float away. Each pop = +1.</p>
+  <div class="hud"><span class="pill">⏱️ <b id="t">40</b>s</span><span class="pill">⭐ <b id="s">0</b></span><span class="pill">🏆 <b id="b">0</b></span><button id="start" class="btn">Start</button><span class="pill"><button id="soundBtn" class="btn">🔊 Sound: On</button><button id="speak" class="btn">🗣️ Speak</button></span></div>
+  <div id="stage" class="stage"></div>
+  <p class="tiny">Tip: Sounds start after your first tap due to mobile browser rules.</p>
+  
+<footer style="margin-top:16px;color:#666;font-size:12px;text-align:center">
+  Created &amp; designed by <b>Animesh</b> • Works offline • No tracking
+</footer>
+
+  
+<script>
+let AC=null, soundOn=true;
+function ensureAC(){ try{ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended'){ AC.resume(); } }catch(e){} }
+function beep(freq=880, dur=0.07, vol=0.08){ try{ ensureAC(); if(!AC) return; const o=AC.createOscillator(); const g=AC.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.value=vol; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);}catch(e){} }
+function blipGood(){ if(soundOn) beep(920,0.08,0.1); }
+function blipBad(){ if(soundOn) beep(220,0.1,0.1); }
+function pop(){ if(soundOn) beep(660,0.05,0.12); }
+function speakLine(text){ try{ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang='en-IN'; u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} }
+function toggleSound(btn){ soundOn=!soundOn; if(btn){ btn.textContent = soundOn ? '🔊 Sound: On' : '🔇 Sound: Off'; } }
+</script>
+
+<script>
+const stage=document.getElementById('stage'); const t=document.getElementById('t'), s=document.getElementById('s'), b=document.getElementById('b');
+const ROUND=40; let secs=ROUND, score=0, playing=false, timer=null, spawnId=null;
+const guide='Pop the rosogollas by tapping them before they float away.';
+document.getElementById('speak').addEventListener('click',()=>speakLine(guide));
+document.getElementById('soundBtn').addEventListener('click',e=>toggleSound(e.currentTarget));
+b.textContent = (function(){ try{ return Number(localStorage.getItem('bp_best')||0); }catch(e){ return 0; } })();
+
+function dims(){ const r=stage.getBoundingClientRect(); return {w:(r.width||360), h:(r.height||600)}; }
+function spawn(){ if(!playing) return; const el=document.createElement('div'); el.className='bub'; const size=60+Math.random()*40; el.style.width=el.style.height=size+'px'; const d=dims(); el.style.left=(Math.random()*(d.w-size))+'px'; el.style.top=d.h+'px';
+  el.addEventListener('pointerdown',()=>{ if(!playing) return; score++; s.textContent=score; pop(); el.remove(); },{passive:true});
+  stage.appendChild(el); const dur=3000+Math.random()*2000; const start=performance.now();
+  function up(now){ if(!stage.contains(el)) return; const p=(now-start)/dur; el.style.top=(d.h - p*(d.h+size))+'px'; if(p<1) requestAnimationFrame(up); else el.remove(); }
+  requestAnimationFrame(up); spawnId=setTimeout(spawn, 400+Math.random()*400);
+}
+function start(){ if(playing) return; playing=true; secs=ROUND; score=0; s.textContent=0; t.textContent=secs; stage.innerHTML=''; speakLine(guide); pop();
+  if(timer) clearInterval(timer); if(spawnId) clearTimeout(spawnId);
+  spawn(); timer=setInterval(()=>{ secs--; t.textContent=secs; if(secs<=0) stop(); },1000);
+}
+function stop(){ playing=false; if(timer) clearInterval(timer); timer=null; if(spawnId) clearTimeout(spawnId); spawnId=null;
+  try{ const best=Number(localStorage.getItem('bp_best')||0); if(score>best){ localStorage.setItem('bp_best',score); b.textContent=score; } }catch(e){}
+  alert('Time! Score: '+score);
+}
+document.getElementById('start').addEventListener('click', start);
+</script>
+</div></body></html>

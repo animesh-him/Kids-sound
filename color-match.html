@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Match – Tap the Color!</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .pill{background:#f1f1f1;padding:8px 12px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}
+  .btn.primary{background:#c1121f;color:#fff}
+  .stage{position:relative;aspect-ratio:16/9;background:linear-gradient(180deg,#ffe9d2,#fff7f0 60%,#ffe2b5);border-radius:12px;border:1px solid #f2dcca;overflow:hidden;margin-top:10px}
+  .ball{position:absolute;border-radius:50%;box-shadow:0 12px 24px rgba(0,0,0,.15)}
+  .prompt{font-size:18px;font-weight:700}
+</style>
+<body><div class="wrap">
+<h1>🎨 Color Match – Tap the Color!</h1>
+<p class="prompt">Instruction: <b>Tap balls of the shown color</b>. Right tap +1, wrong tap −1. Highest score is saved.</p>
+<div class="hud">
+  <span class="pill">⏱️ <b id="t">30</b>s</span>
+  <span class="pill">⭐ <b id="s">0</b></span>
+  <span class="pill">🏆 <b id="b">0</b></span>
+  <button id="start" class="btn primary">Start / Replay</button>
+  <span class="pill"><button id="soundBtn" class="btn">🔊 Sound: On</button><button id="speak" class="btn">🗣️ Speak</button></span>
+</div>
+<p class="prompt">Tap all <span id="need">RED</span> balls!</p>
+<div id="stage" class="stage" aria-label="color stage"></div>
+
+<footer style="margin-top:16px;color:#666;font-size:12px;text-align:center">
+  Created &amp; designed by <b>Animesh</b> • Works offline • No tracking
+</footer>
+
+
+<script>
+let AC=null, soundOn=true;
+function ensureAC(){ try{ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended'){ AC.resume(); } }catch(e){} }
+function beep(freq=880, dur=0.07, vol=0.08){ try{ ensureAC(); if(!AC) return; const o=AC.createOscillator(); const g=AC.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.value=vol; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);}catch(e){} }
+function blipGood(){ if(soundOn) beep(920,0.08,0.1); }
+function blipBad(){ if(soundOn) beep(220,0.1,0.1); }
+function pop(){ if(soundOn) beep(660,0.05,0.12); }
+function speakLine(text){ try{ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang='en-IN'; u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} }
+function toggleSound(btn){ soundOn=!soundOn; if(btn){ btn.textContent = soundOn ? '🔊 Sound: On' : '🔇 Sound: Off'; } }
+</script>
+
+<script>
+const COLORS=[{n:'RED',v:'#e63946'},{n:'YELLOW',v:'#ffd166'},{n:'GREEN',v:'#2a9d8f'},{n:'BLUE',v:'#277da1'},{n:'PURPLE',v:'#8e5cf5'}];
+const ROUND=30; const stage=document.getElementById('stage'); let secs=ROUND,score=0,playing=false,target=COLORS[0],timer=null;
+const t=document.getElementById('t'), s=document.getElementById('s'), b=document.getElementById('b'), need=document.getElementById('need'); b.textContent=localStorage.getItem('cm_best')||0;
+
+const guide='Tap the balls that match the color I say. Wrong taps reduce score.';
+document.getElementById('speak').addEventListener('click',()=>speakLine(guide));
+document.getElementById('soundBtn').addEventListener('click',e=>toggleSound(e.currentTarget));
+
+function newTarget(){ target=COLORS[Math.floor(Math.random()*COLORS.length)]; need.textContent=target.n; }
+function spawn(){ if(!playing) return; const bias=Math.random()<0.6; const c=bias?target:COLORS[Math.floor(Math.random()*COLORS.length)];
+  const el=document.createElement('div'); el.className='ball'; el.style.background=c.v; const size=60+Math.floor(Math.random()*30); el.style.width=el.style.height=size+'px';
+  const pad=8; const W=stage.clientWidth-size-2*pad, H=stage.clientHeight-size-2*pad; el.style.left=pad+Math.random()*W+'px'; el.style.top=pad+Math.random()*H+'px';
+  el.addEventListener('pointerdown',()=>{ if(!playing) return; if(c.n===target.n){ score++; s.textContent=score; blipGood(); } else { score=Math.max(0,score-1); blipBad(); } el.remove(); },{passive:true});
+  stage.appendChild(el); setTimeout(()=>{el.style.opacity='0.6'},700); setTimeout(()=>{el.remove()},1500); setTimeout(spawn, 200+Math.random()*350);
+}
+function start(){ if(playing) return; stage.innerHTML=''; playing=true; secs=ROUND; score=0; s.textContent=0; t.textContent=secs; newTarget(); spawn();
+  blipGood(); speakLine(guide);
+  timer=setInterval(()=>{ secs--; t.textContent=secs; if(secs<=0){ stop(); } },1000); }
+function stop(){ playing=false; clearInterval(timer); timer=null; stage.innerHTML=''; const best=Number(localStorage.getItem('cm_best')||0); if(score>best){localStorage.setItem('cm_best',score);} b.textContent=localStorage.getItem('cm_best'); }
+document.getElementById('start').addEventListener('click',start);
+</script>
+</div></body></html>
