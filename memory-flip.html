@@ -41,7 +41,11 @@ const guide='Flip two cards to find a matching pair. Try to remember where they 
 document.getElementById('speak').addEventListener('click',()=>speakLine(guide));
 document.getElementById('soundBtn').addEventListener('click',e=>toggleSound(e.currentTarget));
 
-try{ best=Number(localStorage.getItem('mf_best')||0)||null; }catch(e){ best=null; } b.textContent=best?best:'-';
+try{
+  best = Number(localStorage.getItem('mf_best'));
+  if (!Number.isFinite(best)) best = Infinity;  // no best yet
+} catch(e){ best = Infinity; }
+b.textContent = Number.isFinite(best) ? best : '—';
 
 function start(){ grid.innerHTML=''; moves=0; matched=0; m.textContent=0; first=second=null; lock=false; speakLine(guide); blipGood();
   const deck=[...ICONS,...ICONS].sort(()=>Math.random()-0.5);
@@ -51,7 +55,14 @@ function start(){ grid.innerHTML=''; moves=0; matched=0; m.textContent=0; first=
 function flip(c){ if(lock||c.classList.contains('open')) return; c.classList.add('open'); c.textContent=c.dataset.sym; pop();
   if(!first){ first=c; return; } second=c; lock=true; moves++; m.textContent=moves;
   if(first.dataset.sym===second.dataset.sym){ matched+=2; blipGood(); first=null; second=null; lock=false;
-    if(matched===ICONS.length*2){ if(!best || moves<best){ try{ localStorage.setItem('mf_best',moves); }catch(e){} b.textContent=moves; } alert('Great memory! Moves: '+moves); }
+    if (matched === ICONS.length * 2) {
+  if (moves < best) {
+    best = moves;                                 // <-- keep memory in sync
+    try { localStorage.setItem('mf_best', String(best)); } catch(e){}
+    b.textContent = best;
+  }
+  alert('Great memory! Moves: ' + moves);
+}
   } else { blipBad(); setTimeout(()=>{ first.classList.remove('open'); second.classList.remove('open'); first.textContent='?'; second.textContent='?'; first=null; second=null; lock=false; }, 650); }
 }
 document.getElementById('start').addEventListener('click', start);
