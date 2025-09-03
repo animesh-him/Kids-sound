@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Listen & Tap — Multilingual Buttons (Voice-Verified)</title>
+<title>Listen & Tap — Multilingual (Buttons, 3D Text, 60s)</title>
 <style>
   body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#fff7f0;color:#222}
   .wrap{max-width:1000px;margin:0 auto;padding:16px}
@@ -15,16 +15,29 @@
   .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#111827;color:#fff}
   .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
   @media (max-width: 520px){ .grid{ grid-template-columns:repeat(3,1fr);} }
-  .cell{border:1px solid #ddd;border-radius:10px;padding:14px 12px;font-size:18px;
-        display:flex;align-items:center;justify-content:flex-start;gap:10px;background:#fff}
-  .dot{display:inline-block;width:18px;height:18px;border-radius:50%}
+  .cell{border:1px solid #ddd;border-radius:12px;padding:22px 12px;font-size:26px;
+        display:flex;align-items:center;justify-content:center;gap:10px;min-height:86px;position:relative}
+  .label3d{font-weight:900;letter-spacing:.03em; text-transform:uppercase}
+  .label3d.white{ color:#ffffff; text-shadow:
+      0 1px 0 rgba(0,0,0,.25),
+      0 2px 0 rgba(0,0,0,.2),
+      0 3px 0 rgba(0,0,0,.15),
+      0 4px 0 rgba(0,0,0,.1),
+      0 6px 6px rgba(0,0,0,.35);
+  }
+  .label3d.black{ color:#111111; text-shadow:
+      0 1px 0 rgba(255,255,255,.45),
+      0 2px 0 rgba(255,255,255,.35),
+      0 3px 0 rgba(255,255,255,.25),
+      0 4px 0 rgba(255,255,255,.15),
+      0 6px 6px rgba(0,0,0,.2);
+  }
   .muted{color:#666}
+  footer.smallnote{margin-top:14px;color:#666;font-size:13px;line-height:1.35}
 </style>
 <body><div class="wrap">
-<h1>👂 Listen & Tap — Multilingual (Voice-Verified)</h1>
-<p class="muted">Only languages with a working voice on your device are shown. 
-Tiles stay in <b>English</b>; prompts are spoken in the selected language. 
-Default language is <b>English</b>.</p>
+<h1>👂 Listen & Tap — Multilingual</h1>
+<p class="muted">Spoken prompt uses the selected language; tiles show <b>English</b> color names with <b>3D text</b> on solid color blocks.</p>
 
 <div class="langbar" id="langbar"></div>
 
@@ -39,16 +52,27 @@ Default language is <b>English</b>.</p>
 <div id="grid" class="grid"></div>
 <p id="status" class="pill">Status: loading voices…</p>
 
-<script>
-// Colors (12)
-var COLORS=[['red','🔴','#e63946',440],['blue','🔵','#277da1',520],
- ['green','🟢','#2a9d8f',600],['yellow','🟡','#ffd166',700],
- ['orange','🟠','#f4a261',740],['purple','🟣','#6a4c93',780],
- ['pink','🩷','#ff6ea9',820],['brown','🟤','#8d5524',860],
- ['black','⚫','#111111',400],['white','⚪','#eeeeee',920],
- ['violet','🟣','#7f00ff',840],['indigo','🔵','#3f00ff',500]];
+<footer class="smallnote">
+  ℹ️ Note: If you install <b>Google Speech Services</b> and add Bengali, Gujarati, Spanish, etc. as a <i>system language</i>, then Chrome can use a real native voice for that language.
+</footer>
 
-// Languages to test (with expected voice tags)
+<script>
+// ---- Colors (11) — Purple removed; Violet & Indigo distinct ----
+var COLORS=[
+  ['red',    '#e63946', 440],
+  ['blue',   '#277da1', 520],
+  ['green',  '#2a9d8f', 600],
+  ['yellow', '#ffd166', 700],
+  ['orange', '#f4a261', 740],
+  ['pink',   '#ff6ea9', 820],
+  ['brown',  '#8d5524', 860],
+  ['black',  '#111111', 400],
+  ['white',  '#eeeeee', 920],
+  ['violet', '#7F00FF', 840],
+  ['indigo', '#4B0082', 500]
+];
+
+// ---- Language candidates (buttons appear only if proper voice is detected) ----
 var LANG_CANDIDATES = [
   ['en','English',['en-IN','en-GB','en-US','en']],
   ['bn','Bengali',['bn-IN','bn-BD','bn']],
@@ -64,56 +88,113 @@ var LANG_CANDIDATES = [
   ['es','Spanish',['es-ES','es-MX','es']]
 ];
 
-// Spoken names
+// ---- Localized spoken names (tiles stay in English) ----
 var L10N={
- en:{red:'red',blue:'blue',green:'green',yellow:'yellow',orange:'orange',purple:'purple',
-     pink:'pink',brown:'brown',black:'black',white:'white',violet:'violet',indigo:'indigo'},
- bn:{red:'লাল',blue:'নীল',green:'সবুজ',yellow:'হলুদ',orange:'কমলা',purple:'বেগুনি',pink:'গোলাপি',
-     brown:'বাদামি',black:'কালো',white:'সাদা',violet:'জামুনি',indigo:'ইন্ডিগো'},
- hi:{red:'लाल',blue:'नीला',green:'हरा',yellow:'पीला',orange:'नारंगी',purple:'बैंगनी',pink:'गुलाबी',
-     brown:'भूरा',black:'काला',white:'सफेद',violet:'जामुनी',indigo:'नील'},
- kn:{red:'ಕೆಂಪು',blue:'ನೀಲಿ',green:'ಹಸಿರು',yellow:'ಹಳದಿ',orange:'ಕಿತ್ತಳೆ',purple:'ನೇರಳೆ',pink:'ಗುಲಾಬಿ',
-     brown:'ಕಂದು',black:'ಕಪ್ಪು',white:'ಬಿಳಿ',violet:'ವಯೊಲೆಟ್',indigo:'ಇಂಡಿಗೋ'},
- ta:{red:'சிவப்பு',blue:'நீலம்',green:'பச்சை',yellow:'மஞ்சள்',orange:'ஆரஞ்சு',purple:'ஊதா',pink:'இளஞ்சிவப்பு',
-     brown:'பழுப்பு',black:'கருப்பு',white:'வெள்ளை',violet:'வைலெட்',indigo:'இண்டிகோ'},
- te:{red:'ఎరుపు',blue:'నీలం',green:'ఆకుపచ్చ',yellow:'పసుపు',orange:'నారింజ',purple:'ఊదు',pink:'గులాబీ',
-     brown:'గోధుమ',black:'నలుపు',white:'తెలుపు',violet:'వయొలెట్',indigo:'ఇండిగో'},
- gu:{red:'લાલ',blue:'વાદળી',green:'લીલો',yellow:'પીળો',orange:'નારંગી',purple:'જાંબલી',pink:'પિંક',
-     brown:'તપખીર',black:'કાળો',white:'સફેદ',violet:'વાયોલેટ',indigo:'ઇન્ડિગો'},
- ja:{red:'赤',blue:'青',green:'緑',yellow:'黄',orange:'オレンジ',purple:'紫',pink:'ピンク',
-     brown:'茶色',black:'黒',white:'白',violet:'バイオレット',indigo:'インディゴ'},
- de:{red:'rot',blue:'blau',green:'grün',yellow:'gelb',orange:'orange',purple:'lila',pink:'rosa',
-     brown:'braun',black:'schwarz',white:'weiß',violet:'violett',indigo:'indigo'},
- ko:{red:'빨강',blue:'파랑',green:'초록',yellow:'노랑',orange:'주황',purple:'보라',pink:'분홍',
-     brown:'갈색',black:'검정',white:'하양',violet:'바이올렛',indigo:'인디고'},
- fr:{red:'rouge',blue:'bleu',green:'vert',yellow:'jaune',orange:'orange',purple:'violet',pink:'rose',
-     brown:'marron',black:'noir',white:'blanc',violet:'violet',indigo:'indigo'},
- es:{red:'rojo',blue:'azul',green:'verde',yellow:'amarillo',orange:'naranja',purple:'morado',pink:'rosa',
-     brown:'marrón',black:'negro',white:'blanco',violet:'violeta',indigo:'índigo'}
+ en:{red:'red',blue:'blue',green:'green',yellow:'yellow',orange:'orange',pink:'pink',brown:'brown',black:'black',white:'white',violet:'violet',indigo:'indigo'},
+ bn:{red:'লাল',blue:'নীল',green:'সবুজ',yellow:'হলুদ',orange:'কমলা',pink:'গোলাপি',brown:'বাদামি',black:'কালো',white:'সাদা',violet:'জামুনি',indigo:'ইন্ডিগো'},
+ hi:{red:'लाल',blue:'नीला',green:'हरा',yellow:'पीला',orange:'नारंगी',pink:'गुलाबी',brown:'भूरा',black:'काला',white:'सफेद',violet:'जामुनी',indigo:'नील'},
+ kn:{red:'ಕೆಂಪು',blue:'ನೀಲಿ',green:'ಹಸಿರು',yellow:'ಹಳದಿ',orange:'ಕಿತ್ತಳೆ',pink:'ಗುಲಾಬಿ',brown:'ಕಂದು',black:'ಕಪ್ಪು',white:'ಬಿಳಿ',violet:'ವಯೊಲೆಟ್',indigo:'ಇಂಡಿಗೋ'},
+ ta:{red:'சிவப்பு',blue:'நீலம்',green:'பச்சை',yellow:'மஞ்சள்',orange:'ஆரஞ்சு',pink:'இளஞ்சிவப்பு',brown:'பழுப்பு',black:'கருப்பு',white:'வெள்ளை',violet:'வைலெட்',indigo:'இண்டிகோ'},
+ te:{red:'ఎరుపు',blue:'నీలం',green:'ఆకుపచ్చ',yellow:'పసుపు',orange:'నారింజ',pink:'గులాబీ',brown:'గోధుమ',black:'నలుపు',white:'తెలుపు',violet:'వయొలెట్',indigo:'ఇండిగో'},
+ gu:{red:'લાલ',blue:'વાદળી',green:'લીલો',yellow:'પીળો',orange:'નારંગી',pink:'પિંક',brown:'તપખીર',black:'કાળો',white:'સફેદ',violet:'વાયોલેટ',indigo:'ઇન્ડિગો'},
+ ja:{red:'赤',blue:'青',green:'緑',yellow:'黄',orange:'オレンジ',pink:'ピンク',brown:'茶色',black:'黒',white:'白',violet:'バイオレット',indigo:'インディゴ'},
+ de:{red:'rot',blue:'blau',green:'grün',yellow:'gelb',orange:'orange',pink:'rosa',brown:'braun',black:'schwarz',white:'weiß',violet:'violett',indigo:'indigo'},
+ ko:{red:'빨강',blue:'파랑',green:'초록',yellow:'노랑',orange:'주황',pink:'분홍',brown:'갈색',black:'검정',white:'하양',violet:'바이올렛',indigo:'인디고'},
+ fr:{red:'rouge',blue:'bleu',green:'vert',yellow:'jaune',orange:'orange',pink:'rose',brown:'marron',black:'noir',white:'blanc',violet:'violet',indigo:'indigo'},
+ es:{red:'rojo',blue:'azul',green:'verde',yellow:'amarillo',orange:'naranja',pink:'morado',brown:'marrón',black:'negro',white:'blanco',violet:'violeta',indigo:'índigo'}
 };
 
-var AC=null, soundOn=true, voices=[], voice=null, currentLang='en';
-function ensureAC(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();} if(AC.state==='suspended'){AC.resume();}}catch(e){}}
-function speak(text){if(!soundOn||!voice) return; var u=new SpeechSynthesisUtterance(text);u.voice=voice;u.rate=1;u.pitch=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}
-function nameFor(key){return (L10N[currentLang]||L10N.en)[key]||key;}
+// ---- Audio + Speech ----
+var voices=[], voice=null, currentLang='en', soundOn=true;
+function speak(text){ if(!soundOn||!voice) return; var u=new SpeechSynthesisUtterance(text); u.voice=voice; u.rate=1; u.pitch=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}
+function nameFor(key){ var pack=L10N[currentLang]||L10N.en; return pack[key]||key; }
 
-// Game
-var playing=false,secs=60,score=0,target=0,timer=null;
-var grid=document.getElementById('grid'),statusEl=document.getElementById('status');
-function updateStatus(m){statusEl.textContent='Status: '+m;}
-function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function nextRound(){target=Math.floor(Math.random()*COLORS.length);speak(nameFor(COLORS[target][0]));rebuildTiles();}
-function rebuildTiles(){grid.innerHTML='';shuffle(COLORS.slice()).forEach(function(item){var d=document.createElement('button');d.className='cell';d.innerHTML='<span class="dot" style="background:'+item[2]+'"></span> '+item[0]+' '+item[1];d.onclick=function(){choose(item[0]===COLORS[target][0]);};grid.appendChild(d);});}
-function choose(ok){if(!playing)return;if(ok){score++;document.getElementById('s').textContent=score;nextRound();}else{score=Math.max(0,score-1);document.getElementById('s').textContent=score;}}
+// ---- Game ----
+var playing=false, secs=60, score=0, target=0, timer=null;
+var grid=document.getElementById('grid'), statusEl=document.getElementById('status');
+function updateStatus(m){ statusEl.textContent='Status: '+m; }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 
-// Events
-document.getElementById('say').onclick=function(){speak(nameFor(COLORS[target][0]));};
-document.getElementById('start').onclick=function(){ensureAC();playing=true;secs=60;score=0;document.getElementById('s').textContent=0;document.getElementById('t').textContent=secs;nextRound();if(timer)clearInterval(timer);timer=setInterval(function(){secs--;document.getElementById('t').textContent=secs;if(secs<=0){clearInterval(timer);playing=false;alert('Time! Score '+score);}},1000);};
-document.getElementById('mute').onclick=function(e){soundOn=!soundOn;e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off';};
+function labelTone(hex){
+  var h=hex.replace('#',''); var r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
+  var L = 0.2126*(r/255) + 0.7152*(g/255) + 0.0722*(b/255);
+  return (L<0.55)? 'white':'black';
+}
 
-// Build language buttons only if voices exist
-function refreshVoices(){voices=window.speechSynthesis.getVoices();var bar=document.getElementById('langbar');bar.innerHTML='';LANG_CANDIDATES.forEach(function(cfg){var code=cfg[0],label=cfg[1],tags=cfg[2];var v=voices.find(vc=>tags.some(t=>vc.lang.toLowerCase().startsWith(t.toLowerCase())));if(v){var b=document.createElement('button');b.className='lbtn';b.textContent=label;b.onclick=function(){currentLang=code;voice=v;Array.from(bar.children).forEach(x=>x.classList.remove('active'));b.classList.add('active');updateStatus('Language: '+label+' • '+(v.name||v.lang));if(playing)nextRound();};bar.appendChild(b);if(code==='en'){b.classList.add('active');currentLang='en';voice=v;}}});}
-window.speechSynthesis.onvoiceschanged=refreshVoices;setTimeout(refreshVoices,200);
+function nextRound(){
+  target = Math.floor(Math.random()*COLORS.length);
+  speak(nameFor(COLORS[target][0]));
+  rebuildTiles();
+}
+
+function rebuildTiles(){
+  grid.innerHTML='';
+  var order = shuffle(COLORS.slice());
+  order.forEach(function(item){
+    var key=item[0], bg=item[1];
+    var d=document.createElement('button');
+    d.className='cell';
+    d.style.background = bg;
+    var tone = labelTone(bg);
+    var span=document.createElement('span');
+    span.className = 'label3d ' + (tone==='white'?'white':'black');
+    span.textContent = key.toUpperCase();
+    d.appendChild(span);
+    d.onclick=function(){ choose(key===COLORS[target][0]); };
+    grid.appendChild(d);
+  });
+}
+
+function choose(ok){
+  if(!playing) return;
+  if(ok){ score++; document.getElementById('s').textContent=score; nextRound(); }
+  else { score=Math.max(0,score-1); document.getElementById('s').textContent=score; }
+}
+
+// ---- Controls ----
+document.getElementById('say').onclick=function(){ speak(nameFor(COLORS[target][0])); };
+document.getElementById('start').onclick=function(){
+  playing=true; secs=60; score=0;
+  document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs;
+  nextRound();
+  if(timer) clearInterval(timer);
+  timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs; if(secs<=0){ clearInterval(timer); playing=false; alert('Time! Score '+score); } },1000);
+  updateStatus('Game started. Language: '+currentLang.toUpperCase()+' • '+(voice?(voice.name||voice.lang):'no voice'));
+};
+document.getElementById('mute').onclick=function(e){ soundOn=!soundOn; e.target.textContent = soundOn? '🔊 Sound: On':'🔇 Sound: Off'; };
+
+// ---- Build language buttons (voice-verified) ----
+var langbar=document.getElementById('langbar');
+function refreshVoices(){
+  try{ voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : []; }catch(e){ voices=[]; }
+  langbar.innerHTML='';
+  LANG_CANDIDATES.forEach(function(cfg){
+    var code=cfg[0], label=cfg[1], tags=cfg[2];
+    var v = voices.find(function(vc){ return tags.some(function(t){ return (vc.lang||'').toLowerCase().startsWith(t.toLowerCase()); }); });
+    if(v){
+      var b=document.createElement('button'); b.className='lbtn'; b.textContent=label; b.dataset.code=code;
+      b.onclick=function(){
+        currentLang=code; voice=v;
+        Array.prototype.forEach.call(langbar.children, function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        updateStatus('Language: '+label+' • Voice: '+(v.name||v.lang));
+        if(playing) nextRound();
+      };
+      langbar.appendChild(b);
+      if(code==='en' && !document.querySelector('.lbtn.active')){ b.classList.add('active'); currentLang='en'; voice=v; }
+    }
+  });
+  updateStatus(langbar.children.length? 'Voices ready ('+langbar.children.length+' languages shown).' : 'No compatible voices detected.');
+}
+try{
+  if(window.speechSynthesis){
+    window.speechSynthesis.onvoiceschanged=refreshVoices;
+    setTimeout(refreshVoices,200);
+  } else {
+    updateStatus('Speech synthesis not available in this browser.');
+  }
+}catch(e){ updateStatus('Speech init error.'); }
 </script>
+<footer class="smallnote">Created & designed by <b>Animesh</b></footer>
 </div></body>
 </html>
