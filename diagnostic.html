@@ -1,0 +1,19 @@
+<!DOCTYPE html><meta charset="utf-8">
+<title>Diagnostic</title>
+<h1>Environment Diagnostic</h1>
+<p id="out">Checking…</p>
+<script>
+(function(){
+  var out = document.getElementById('out');
+  try {
+    out.textContent = "✅ JavaScript running. Click the button.";
+    var btn = document.createElement('button');
+    btn.textContent = "Click me";
+    btn.onclick = function(){ alert("✅ Alerts work. Your browser can run the games."); };
+    document.body.appendChild(btn);
+  } catch(e){
+    out.textContent = "❌ JS error: " + e.message;
+  }
+})();
+</script>
+<noscript>❌ JavaScript is disabled. Enable it to play.</noscript>

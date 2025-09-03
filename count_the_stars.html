@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Count the Stars (SAFE)</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#00111d;color:#eee}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .pill{background:#0b2535;padding:8px 12px;border-radius:16px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#ffd166;color:#222}
+</style>
+<body><div class="wrap">
+<h1>⭐ Count the Stars (SAFE)</h1>
+<p><b>Instruction:</b> Count the stars and choose the right number.</p>
+<canvas id="cv" width="600" height="340" style="background:#00111d;border:1px solid #003;border-radius:12px;display:block;margin-bottom:10px"></canvas>
+<div class="hud">
+  <span class="pill">Score: <b id="s">0</b></span>
+  <span class="pill">⏱️ <b id="t">40</b>s</span>
+  <button class="btn" id="start">Start</button>
+</div>
+<div id="choices" class="hud"></div>
+<script>
+(function(){
+const cvs=document.getElementById('cv'), c=cvs.getContext('2d'); let stars=[], answer=0, secs=40, score=0, playing=false, timer=null;
+function draw(){ c.clearRect(0,0,600,340); c.fillStyle='#00111d'; c.fillRect(0,0,600,340); for(var i=0;i<stars.length;i++){ var s=stars[i]; c.fillStyle='#ffd166'; c.beginPath(); c.arc(s.x,s.y,2.2,0,6.28); c.fill(); } }
+function newRound(){
+  var n=6+Math.floor(Math.random()*15); stars=[]; for(var i=0;i<n;i++) stars.push({x:10+Math.random()*580,y:10+Math.random()*320}); answer=n; draw();
+  var ch=document.getElementById('choices'); ch.innerHTML='';
+  var opts=new Set([answer]); while(opts.size<4) opts.add(answer + Math.floor(Math.random()*7)-3);
+  var arr=Array.from(opts).filter(function(v){return v>0}); arr.sort(function(){return Math.random()-0.5;});
+  arr.forEach(function(v){ var b=document.createElement('button'); b.className='btn'; b.textContent=String(v); b.onclick=function(){ choose(v===answer); }; ch.appendChild(b); });
+}
+function choose(okhit){ if(!playing) return; if(okhit){ score++; newRound(); } else { score=Math.max(0,score-1); } document.getElementById('s').textContent=score; }
+document.getElementById('start').addEventListener('click', function(){ if(playing) return; playing=true; secs=40; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs; newRound(); timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs; if(secs<=0){ clearInterval(timer); playing=false; alert('Time! Score '+score); } },1000); });
+draw();
+})();</script>
+<footer>Created & designed by <b>Animesh</b></footer>
+</div></body></html>

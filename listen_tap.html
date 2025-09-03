@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Listen & Tap (SAFE)</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .pill{background:#f3f3f3;padding:8px 12px;border-radius:16px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .cell{border:1px solid #ddd;border-radius:10px;padding:14px;font-size:28px}
+</style>
+<body><div class="wrap">
+<h1>👂 Listen & Tap (SAFE)</h1>
+<p><b>Instruction:</b> Read the word and tap the matching emoji.</p>
+<div class="hud">
+  <span class="pill">Target: <b id="tg">—</b></span>
+  <span class="pill">Score: <b id="s">0</b></span>
+  <span class="pill">⏱️ <b id="t">40</b>s</span>
+  <button class="btn" id="start">Start</button>
+</div>
+<div id="grid" class="grid"></div>
+<script>
+(function(){
+const ITEMS=[
+  ['apple','🍎'],['banana','🍌'],['grapes','🍇'],['mango','🥭'],['orange','🍊'],
+  ['balloon','🎈'],['book','📘'],['drum','🥁'],['star','⭐'],['flower','🌸'],
+  ['car','🚗'],['bus','🚌']
+];
+let playing=false, secs=40, score=0, target='apple', timer=null;
+const grid=document.getElementById('grid'), tg=document.getElementById('tg');
+function setup(){
+  grid.innerHTML='';
+  const pool=ITEMS.slice(0); pool.sort(()=>Math.random()-0.5);
+  pool.forEach(function(item){ var name=item[0], emo=item[1]; var d=document.createElement('button'); d.className='cell'; d.textContent=emo; d.addEventListener('click',function(){ choose(name===target); }); grid.appendChild(d); });
+  target = pool[Math.floor(Math.random()*pool.length)][0];
+  tg.textContent=target;
+}
+function choose(okhit){ if(!playing) return; if(okhit){ score++; setup(); } else { score=Math.max(0,score-1); } document.getElementById('s').textContent=score; }
+document.getElementById('start').addEventListener('click',function(){ if(playing) return; playing=true; secs=40; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs; setup(); timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs; if(secs<=0){ clearInterval(timer); playing=false; alert('Time! Score '+score); } },1000); });
+})();</script>
+<footer>Created & designed by <b>Animesh</b></footer>
+</div></body></html>

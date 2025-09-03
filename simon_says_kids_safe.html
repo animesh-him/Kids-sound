@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simon Says (Kids, SAFE)</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .pill{background:#f3f3f3;padding:8px 12px;border-radius:16px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(2,150px);gap:12px;justify-content:center;margin:12px auto}
+  .tile{width:150px;height:150px;border-radius:16px;opacity:.95;box-shadow:0 8px 20px #0002}
+  .tile.on{filter:brightness(1.7)}
+  .t0{background:#e63946}.t1{background:#ffd166}.t2{background:#2a9d8f}.t3{background:#277da1}
+</style>
+<body><div class="wrap">
+<h1>🎵 Simon Says (Kids, SAFE)</h1>
+<p><b>Instruction:</b> Watch and repeat the color sequence.</p>
+<div class="hud">
+  <span class="pill">Round: <b id="r">0</b></span>
+  <button class="btn" id="start">Start</button>
+</div>
+<div class="grid"><div class="tile t0" data-i="0"></div><div class="tile t1" data-i="1"></div><div class="tile t2" data-i="2"></div><div class="tile t3" data-i="3"></div></div>
+<script>
+(function(){
+const tiles=[].slice.call(document.querySelectorAll('.tile'));
+var seq=[],step=0,round=0,showing=false,playing=false;
+function flash(i,ms){ tiles[i].classList.add('on'); setTimeout(function(){ tiles[i].classList.remove('on'); }, ms||600); }
+function showSeq(){ showing=true; var i=0; function next(){ if(i>=seq.length){ showing=false; return; } setTimeout(function(){ flash(seq[i],700); i++; setTimeout(next,300); }, 300);} next(); }
+function nextRound(){ round++; document.getElementById('r').textContent=round; seq.push(Math.floor(Math.random()*4)); step=0; showSeq(); }
+function start(){ if(playing) return; seq=[]; round=0; playing=true; nextRound(); }
+function wrong(){ playing=false; alert('Over! Round '+(round-1)); }
+tiles.forEach(function(t){ t.addEventListener('click', function(){ if(!playing||showing) return; var i=Number(t.getAttribute('data-i')); flash(i,300); if(i!==seq[step]) return wrong(); step++; if(step===seq.length) setTimeout(nextRound, 700); }); });
+document.getElementById('start').addEventListener('click', start);
+})();</script>
+<footer>Created & designed by <b>Animesh</b></footer>
+</div></body></html>

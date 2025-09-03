@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Balloon Pop (SAFE)</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .pill{background:#f3f3f3;padding:8px 12px;border-radius:16px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+</style>
+<body><div class="wrap">
+<h1>🎈 Balloon Pop (SAFE)</h1>
+<p><b>Instruction:</b> Pop balloons of the <b>target color</b> only.</p>
+<div class="hud">
+  <span class="pill">Target: <b id="tg">—</b></span>
+  <span class="pill">Score: <b id="s">0</b></span>
+  <span class="pill">⏱️ <b id="t">40</b>s</span>
+  <button class="btn" id="start">Start</button>
+</div>
+<canvas id="cv" width="600" height="420" style="background:#eef;border:1px solid #dde;border-radius:12px"></canvas>
+<script>
+(function(){
+const COLORS={red:'#e63946',yellow:'#ffd166',green:'#2a9d8f',blue:'#277da1',purple:'#6a4c93',orange:'#f4a261'};
+const cvs=document.getElementById('cv'), c=cvs.getContext('2d'); let balloons=[], secs=40, score=0, playing=false, last=0, target='red', timer=null;
+function newTarget(){ const keys=Object.keys(COLORS); target=keys[Math.floor(Math.random()*keys.length)]; document.getElementById('tg').textContent=target; }
+function spawn(){ const keys=Object.keys(COLORS); const color=keys[Math.floor(Math.random()*keys.length)]; const x=30+Math.random()*540, r=12+Math.random()*16, vy=1+Math.random()*1.6; balloons.push({x:x,y:430+r,r:r,vy:vy,color:color}); }
+function draw(){ c.clearRect(0,0,600,420); balloons.forEach(function(b){ c.fillStyle=COLORS[b.color]; c.beginPath(); c.arc(b.x,b.y,b.r,0,6.28); c.fill(); }); }
+function step(ts){ if(!playing) return; if(ts-last>550){ spawn(); last=ts; } balloons.forEach(function(b){ b.y-=b.vy; }); balloons=balloons.filter(function(b){ return b.y>-30; }); draw(); requestAnimationFrame(step); }
+cvs.addEventListener('pointerdown',function(e){ if(!playing) return; const rect=cvs.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; balloons=balloons.filter(function(b){ const d=(b.x-x)*(b.x-x)+(b.y-y)*(b.y-y); if(d<=b.r*b.r){ if(b.color===target){ score++; } else { score=Math.max(0,score-1); } return false; } return true; }); document.getElementById('s').textContent=score; });
+document.getElementById('start').addEventListener('click',function(){ if(playing) return; playing=true; balloons=[]; secs=40; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs; newTarget(); draw(); last=0; requestAnimationFrame(step); timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs; if(secs%8===0) newTarget(); if(secs<=0){ clearInterval(timer); playing=false; alert('Time! Score '+score); } },1000); });
+draw();
+})();</script>
+<footer>Created & designed by <b>Animesh</b></footer>
+</div></body></html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Hunt (SAFE)</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#fff7f0;color:#222}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .pill{background:#f3f3f3;padding:8px 12px;border-radius:16px;display:inline-flex;gap:8px;align-items:center}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .cell{width:100%;padding-top:100%;border-radius:12px;position:relative}
+  .cell>i{position:absolute;inset:0}
+</style>
+<body><div class="wrap">
+<h1>🎯 Color Hunt (SAFE)</h1>
+<p><b>Instruction:</b> Tap the targets of the shown color. 30s timer.</p>
+<div class="hud">
+  <span class="pill">Target: <b id="tg">—</b></span>
+  <span class="pill">Score: <b id="s">0</b></span>
+  <span class="pill">⏱️ <b id="t">30</b>s</span>
+  <button class="btn" id="start">Start</button>
+</div>
+<div id="grid" class="grid"></div>
+<script>
+(function(){
+const COLORS={red:'#e63946',yellow:'#ffd166',green:'#2a9d8f',blue:'#277da1',purple:'#6a4c93',orange:'#f4a261'};
+let playing=false, secs=30, score=0, targetKey='red', timer=null;
+const grid=document.getElementById('grid'), tg=document.getElementById('tg');
+function roundSetup(){
+  grid.innerHTML='';
+  const keys=Object.keys(COLORS);
+  targetKey = keys[Math.floor(Math.random()*keys.length)];
+  tg.textContent=targetKey;
+  let placed=0;
+  for(let i=0;i<25;i++){ const k = keys[Math.floor(Math.random()*keys.length)];
+    const d=document.createElement('div'); d.className='cell'; d.style.background=COLORS[k];
+    d.appendChild(document.createElement('i'));
+    d.addEventListener('click',()=>choose(k===targetKey, d)); grid.appendChild(d);
+    if(k===targetKey) placed++;
+  }
+  if(placed===0){ const n=grid.children[0]; n.style.background=COLORS[targetKey]; n.onclick=()=>choose(true,n); }
+}
+function choose(okhit, node){ if(!playing) return; if(okhit){ score++; node.style.opacity='0.5'; } else { score=Math.max(0,score-1); } document.getElementById('s').textContent=score; }
+document.getElementById('start').addEventListener('click',function(){ if(playing) return; playing=true; secs=30; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs; roundSetup(); timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs; if(secs%6===0) roundSetup(); if(secs<=0){ clearInterval(timer); playing=false; alert('Time! Score '+score); } },1000); });
+})();</script>
+<footer>Created & designed by <b>Animesh</b></footer>
+</div></body></html>
