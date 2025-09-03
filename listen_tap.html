@@ -1,42 +1,119 @@
-<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Listen & Tap (SAFE)</title>
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Listen & Tap — Multilingual Buttons (Voice-Verified)</title>
 <style>
   body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#fff7f0;color:#222}
-  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px}
+  .langbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .lbtn{border:1px solid #1f2937;background:#ffffff;color:#111827;
+        padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:700;letter-spacing:.02em}
+  .lbtn.active{background:#111827;color:#ffffff;border-color:#111827}
   .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
   .pill{background:#f3f3f3;padding:8px 12px;border-radius:16px;display:inline-flex;gap:8px;align-items:center}
-  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#c1121f;color:#fff}
-  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-  .cell{border:1px solid #ddd;border-radius:10px;padding:14px;font-size:28px}
+  .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:#111827;color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+  @media (max-width: 520px){ .grid{ grid-template-columns:repeat(3,1fr);} }
+  .cell{border:1px solid #ddd;border-radius:10px;padding:14px 12px;font-size:18px;
+        display:flex;align-items:center;justify-content:flex-start;gap:10px;background:#fff}
+  .dot{display:inline-block;width:18px;height:18px;border-radius:50%}
+  .muted{color:#666}
 </style>
 <body><div class="wrap">
-<h1>👂 Listen & Tap (SAFE)</h1>
-<p><b>Instruction:</b> Read the word and tap the matching emoji.</p>
+<h1>👂 Listen & Tap — Multilingual (Voice-Verified)</h1>
+<p class="muted">Only languages with a working voice on your device are shown. 
+Tiles stay in <b>English</b>; prompts are spoken in the selected language. 
+Default language is <b>English</b>.</p>
+
+<div class="langbar" id="langbar"></div>
+
 <div class="hud">
-  <span class="pill">Target: <b id="tg">—</b></span>
   <span class="pill">Score: <b id="s">0</b></span>
-  <span class="pill">⏱️ <b id="t">40</b>s</span>
+  <span class="pill">⏱️ <b id="t">60</b>s</span>
+  <button class="btn" id="say">🗣️ Speak</button>
   <button class="btn" id="start">Start</button>
+  <button class="btn" id="mute">🔊 Sound: On</button>
 </div>
+
 <div id="grid" class="grid"></div>
+<p id="status" class="pill">Status: loading voices…</p>
+
 <script>
-(function(){
-const ITEMS=[
-  ['apple','🍎'],['banana','🍌'],['grapes','🍇'],['mango','🥭'],['orange','🍊'],
-  ['balloon','🎈'],['book','📘'],['drum','🥁'],['star','⭐'],['flower','🌸'],
-  ['car','🚗'],['bus','🚌']
+// Colors (12)
+var COLORS=[['red','🔴','#e63946',440],['blue','🔵','#277da1',520],
+ ['green','🟢','#2a9d8f',600],['yellow','🟡','#ffd166',700],
+ ['orange','🟠','#f4a261',740],['purple','🟣','#6a4c93',780],
+ ['pink','🩷','#ff6ea9',820],['brown','🟤','#8d5524',860],
+ ['black','⚫','#111111',400],['white','⚪','#eeeeee',920],
+ ['violet','🟣','#7f00ff',840],['indigo','🔵','#3f00ff',500]];
+
+// Languages to test (with expected voice tags)
+var LANG_CANDIDATES = [
+  ['en','English',['en-IN','en-GB','en-US','en']],
+  ['bn','Bengali',['bn-IN','bn-BD','bn']],
+  ['hi','Hindi',['hi-IN','hi']],
+  ['kn','Kannada',['kn-IN','kn']],
+  ['ta','Tamil',['ta-IN','ta']],
+  ['te','Telugu',['te-IN','te']],
+  ['gu','Gujarati',['gu-IN','gu']],
+  ['ja','Japanese',['ja-JP','ja']],
+  ['de','German',['de-DE','de']],
+  ['ko','Korean',['ko-KR','ko']],
+  ['fr','French',['fr-FR','fr']],
+  ['es','Spanish',['es-ES','es-MX','es']]
 ];
-let playing=false, secs=40, score=0, target='apple', timer=null;
-const grid=document.getElementById('grid'), tg=document.getElementById('tg');
-function setup(){
-  grid.innerHTML='';
-  const pool=ITEMS.slice(0); pool.sort(()=>Math.random()-0.5);
-  pool.forEach(function(item){ var name=item[0], emo=item[1]; var d=document.createElement('button'); d.className='cell'; d.textContent=emo; d.addEventListener('click',function(){ choose(name===target); }); grid.appendChild(d); });
-  target = pool[Math.floor(Math.random()*pool.length)][0];
-  tg.textContent=target;
-}
-function choose(okhit){ if(!playing) return; if(okhit){ score++; setup(); } else { score=Math.max(0,score-1); } document.getElementById('s').textContent=score; }
-document.getElementById('start').addEventListener('click',function(){ if(playing) return; playing=true; secs=40; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs; setup(); timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs; if(secs<=0){ clearInterval(timer); playing=false; alert('Time! Score '+score); } },1000); });
-})();</script>
-<footer>Created & designed by <b>Animesh</b></footer>
-</div></body></html>
+
+// Spoken names
+var L10N={
+ en:{red:'red',blue:'blue',green:'green',yellow:'yellow',orange:'orange',purple:'purple',
+     pink:'pink',brown:'brown',black:'black',white:'white',violet:'violet',indigo:'indigo'},
+ bn:{red:'লাল',blue:'নীল',green:'সবুজ',yellow:'হলুদ',orange:'কমলা',purple:'বেগুনি',pink:'গোলাপি',
+     brown:'বাদামি',black:'কালো',white:'সাদা',violet:'জামুনি',indigo:'ইন্ডিগো'},
+ hi:{red:'लाल',blue:'नीला',green:'हरा',yellow:'पीला',orange:'नारंगी',purple:'बैंगनी',pink:'गुलाबी',
+     brown:'भूरा',black:'काला',white:'सफेद',violet:'जामुनी',indigo:'नील'},
+ kn:{red:'ಕೆಂಪು',blue:'ನೀಲಿ',green:'ಹಸಿರು',yellow:'ಹಳದಿ',orange:'ಕಿತ್ತಳೆ',purple:'ನೇರಳೆ',pink:'ಗುಲಾಬಿ',
+     brown:'ಕಂದು',black:'ಕಪ್ಪು',white:'ಬಿಳಿ',violet:'ವಯೊಲೆಟ್',indigo:'ಇಂಡಿಗೋ'},
+ ta:{red:'சிவப்பு',blue:'நீலம்',green:'பச்சை',yellow:'மஞ்சள்',orange:'ஆரஞ்சு',purple:'ஊதா',pink:'இளஞ்சிவப்பு',
+     brown:'பழுப்பு',black:'கருப்பு',white:'வெள்ளை',violet:'வைலெட்',indigo:'இண்டிகோ'},
+ te:{red:'ఎరుపు',blue:'నీలం',green:'ఆకుపచ్చ',yellow:'పసుపు',orange:'నారింజ',purple:'ఊదు',pink:'గులాబీ',
+     brown:'గోధుమ',black:'నలుపు',white:'తెలుపు',violet:'వయొలెట్',indigo:'ఇండిగో'},
+ gu:{red:'લાલ',blue:'વાદળી',green:'લીલો',yellow:'પીળો',orange:'નારંગી',purple:'જાંબલી',pink:'પિંક',
+     brown:'તપખીર',black:'કાળો',white:'સફેદ',violet:'વાયોલેટ',indigo:'ઇન્ડિગો'},
+ ja:{red:'赤',blue:'青',green:'緑',yellow:'黄',orange:'オレンジ',purple:'紫',pink:'ピンク',
+     brown:'茶色',black:'黒',white:'白',violet:'バイオレット',indigo:'インディゴ'},
+ de:{red:'rot',blue:'blau',green:'grün',yellow:'gelb',orange:'orange',purple:'lila',pink:'rosa',
+     brown:'braun',black:'schwarz',white:'weiß',violet:'violett',indigo:'indigo'},
+ ko:{red:'빨강',blue:'파랑',green:'초록',yellow:'노랑',orange:'주황',purple:'보라',pink:'분홍',
+     brown:'갈색',black:'검정',white:'하양',violet:'바이올렛',indigo:'인디고'},
+ fr:{red:'rouge',blue:'bleu',green:'vert',yellow:'jaune',orange:'orange',purple:'violet',pink:'rose',
+     brown:'marron',black:'noir',white:'blanc',violet:'violet',indigo:'indigo'},
+ es:{red:'rojo',blue:'azul',green:'verde',yellow:'amarillo',orange:'naranja',purple:'morado',pink:'rosa',
+     brown:'marrón',black:'negro',white:'blanco',violet:'violeta',indigo:'índigo'}
+};
+
+var AC=null, soundOn=true, voices=[], voice=null, currentLang='en';
+function ensureAC(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();} if(AC.state==='suspended'){AC.resume();}}catch(e){}}
+function speak(text){if(!soundOn||!voice) return; var u=new SpeechSynthesisUtterance(text);u.voice=voice;u.rate=1;u.pitch=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}
+function nameFor(key){return (L10N[currentLang]||L10N.en)[key]||key;}
+
+// Game
+var playing=false,secs=60,score=0,target=0,timer=null;
+var grid=document.getElementById('grid'),statusEl=document.getElementById('status');
+function updateStatus(m){statusEl.textContent='Status: '+m;}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function nextRound(){target=Math.floor(Math.random()*COLORS.length);speak(nameFor(COLORS[target][0]));rebuildTiles();}
+function rebuildTiles(){grid.innerHTML='';shuffle(COLORS.slice()).forEach(function(item){var d=document.createElement('button');d.className='cell';d.innerHTML='<span class="dot" style="background:'+item[2]+'"></span> '+item[0]+' '+item[1];d.onclick=function(){choose(item[0]===COLORS[target][0]);};grid.appendChild(d);});}
+function choose(ok){if(!playing)return;if(ok){score++;document.getElementById('s').textContent=score;nextRound();}else{score=Math.max(0,score-1);document.getElementById('s').textContent=score;}}
+
+// Events
+document.getElementById('say').onclick=function(){speak(nameFor(COLORS[target][0]));};
+document.getElementById('start').onclick=function(){ensureAC();playing=true;secs=60;score=0;document.getElementById('s').textContent=0;document.getElementById('t').textContent=secs;nextRound();if(timer)clearInterval(timer);timer=setInterval(function(){secs--;document.getElementById('t').textContent=secs;if(secs<=0){clearInterval(timer);playing=false;alert('Time! Score '+score);}},1000);};
+document.getElementById('mute').onclick=function(e){soundOn=!soundOn;e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off';};
+
+// Build language buttons only if voices exist
+function refreshVoices(){voices=window.speechSynthesis.getVoices();var bar=document.getElementById('langbar');bar.innerHTML='';LANG_CANDIDATES.forEach(function(cfg){var code=cfg[0],label=cfg[1],tags=cfg[2];var v=voices.find(vc=>tags.some(t=>vc.lang.toLowerCase().startsWith(t.toLowerCase())));if(v){var b=document.createElement('button');b.className='lbtn';b.textContent=label;b.onclick=function(){currentLang=code;voice=v;Array.from(bar.children).forEach(x=>x.classList.remove('active'));b.classList.add('active');updateStatus('Language: '+label+' • '+(v.name||v.lang));if(playing)nextRound();};bar.appendChild(b);if(code==='en'){b.classList.add('active');currentLang='en';voice=v;}}});}
+window.speechSynthesis.onvoiceschanged=refreshVoices;setTimeout(refreshVoices,200);
+</script>
+</div></body>
+</html>
