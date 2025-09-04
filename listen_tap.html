@@ -1,1 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Listen & Tap — Multilingual (Levels + Spoken Start/End)</title>
+<style>
+  *,*::before,*::after{ box-sizing:border-box }
+  html,body{ height:100% }
+  body{ margin:0; overflow-x:hidden; font-family:system-ui,Segoe UI,Arial; background:#fff7f0; color:#222 }
+  .wrap{ max-width:1000px; width:100%; margin:0 auto; padding:12px }
+  .langbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 }
+  .lbtn{ border:1px solid #1f2937; background:#fff; color:#111827; padding:8px 14px; border-radius:999px; cursor:pointer; font-weight:700; letter-spacing:.02em }
+  .lbtn.active{ background:#111827; color:#fff; border-color:#111827 }
+  .hud{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 }
+  .pill{ background:#f3f3f3; padding:8px 12px; border-radius:16px; display:inline-flex; gap:8px; align-items:center }
+  .btn{ border:0; border-radius:999px; padding:10px 16px; font-weight:700; cursor:pointer; background:#111827; color:#fff }
+  .levelbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 }
+  .lvlbtn{ border:1px solid #78350f; background:#fff; color:#78350f; padding:8px 14px; border-radius:12px; cursor:pointer; font-weight:800; letter-spacing:.02em }
+  .lvlbtn.active{ background:#78350f; color:#fff; }
+  .grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; width:100% }
+  @media (min-width:760px){ .grid{ grid-template-columns:repeat(4, minmax(0,1fr)) } }
+  .cell{ width:100%; border:1px solid #ddd; border-radius:12px; padding:22px 12px; min-height:86px; display:flex; align-items:center; justify-content:center; position:relative; font-size:26px }
+  .label3d{ font-weight:900; letter-spacing:.03em; text-transform:uppercase }
+  .label3d.white{ color:#fff; text-shadow:0 1px 0 rgba(0,0,0,.25),0 2px 0 rgba(0,0,0,.2),0 3px 0 rgba(0,0,0,.15),0 4px 0 rgba(0,0,0,.1),0 6px 6px rgba(0,0,0,.35) }
+  .label3d.black{ color:#111; text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 0 rgba(255,255,255,.35),0 3px 0 rgba(255,255,255,.25),0 4px 0 rgba(255,255,255,.15),0 6px 6px rgba(0,0,0,.2) }
+  .muted{ color:#666 }
+  footer.smallnote{ margin-top:14px; color:#666; font-size:13px; line-height:1.35 }
+</style>
+<body>
+<div class="wrap">
+  <h1>👂 Listen & Tap — Multilingual (Levels)</h1>
+  <p class="muted">Level 1 shows <b>3D English labels</b> on color blocks; Level 2 uses <b>pure color blocks</b>. Spoken prompts use the selected language.</p>
+
+  <div class="langbar" id="langbar"></div>
+
+  <div class="levelbar">
+    <button class="lvlbtn active" id="lvl1">Level 1 (Labels)</button>
+    <button class="lvlbtn" id="lvl2">Level 2 (No Labels)</button>
+  </div>
+
+  <div class="hud">
+    <span class="pill">Score: <b id="s">0</b></span>
+    <span class="pill">⏱️ <b id="t">60</b>s</span>
+    <button class="btn" id="say">🗣️ Speak</button>
+    <button class="btn" id="start">Start</button>
+    <button class="btn" id="mute">🔊 Sound: On</button>
+  </div>
+
+  <div id="grid" class="grid"></div>
+  <p id="status" class="pill">Status: Press Start to begin — <b>Let’s play, gently tap on me!</b></p>
+
+  <footer class="smallnote">
+    ℹ️ If you install <b>Google Speech Services</b> and add Bengali, Gujarati, Spanish, etc. as a <i>system language</i>, Chrome can use a native voice.<br>
+    💬 If you don’t see your language available, comment on the Games webpage — I will include it. Have fun!
+  </footer>
+</div>
+
+<script>
+/* === Colors === */
+var COLORS=[['red','#e63946'],['blue','#277da1'],['green','#2a9d8f'],['yellow','#ffd166'],['orange','#f4a261'],['pink','#ff6ea9'],['brown','#8d5524'],['black','#111111'],['white','#eeeeee'],['violet','#7F00FF'],['indigo','#4B0082']];
+
+/* === Languages: English first, others A–Z; UK English priority === */
+var BASE_LANGS=[
+  ['en','English',['en-GB','en-US','en-IN','en']], 
+  ['bn','Bengali',['bn-IN','bn-BD','bn']],
+  ['de','German',['de-DE','de']], 
+  ['es','Spanish',['es-ES','es-MX','es']],
+  ['fr','French',['fr-FR','fr']], 
+  ['ja','Japanese',['ja-JP','ja']],
+  ['ko','Korean',['ko-KR','ko']]
+];
+var LANG_CANDIDATES=(function(){var en=BASE_LANGS.find(x=>x[0]==='en');var others=BASE_LANGS.filter(x=>x[0]!=='en').sort((a,b)=>a[1].localeCompare(b[1]));return [en].concat(others);})();
+
+/* === Localized names for speech === */
+var L10N={
+  en:{red:'red',blue:'blue',green:'green',yellow:'yellow',orange:'orange',pink:'pink',brown:'brown',black:'black',white:'white',violet:'violet',indigo:'indigo'},
+  bn:{ red:'লাল', blue:'নীল', green:'সবুজ', yellow:'হলুদ', orange:'কমলা', pink:'গোলাপি', brown:'বাদামী', black:'কালো', white:'সাদা', violet:'জামুনি', indigo:'নীলচে' },
+  hi:{red:'लाल',blue:'नीला',green:'हरा',yellow:'पीला',orange:'नारंगी',pink:'गुलाबी',brown:'भूरा',black:'काला',white:'सफेद',violet:'जामुनी',indigo:'नील'},
+  kn:{red:'ಕೆಂಪು',blue:'ನೀಲಿ',green:'ಹಸಿರು',yellow:'ಹಳದಿ',orange:'ಕಿತ್ತಳೆ',pink:'ಗುಲಾಬಿ',brown:'ಕಂದು',black:'ಕಪ್ಪು',white:'ಬಿಳಿ',violet:'ವಯೊಲೆಟ್',indigo:'ಇಂಡಿಗೋ'},
+  ta:{red:'சிவப்பு',blue:'நீலம்',green:'பச்சை',yellow:'மஞ்சள்',orange:'ஆரஞ்சு',pink:'இளஞ்சிவப்பு',brown:'பழுப்பு',black:'கருப்பு',white:'வெள்ளை',violet:'வைலெட்',indigo:'இண்டிகோ'},
+  te:{red:'ఎరుపు',blue:'నీలం',green:'ఆకుపచ్చ',yellow:'పసుపు',orange:'నారింజ',pink:'గులాబీ',brown:'గోధుమ',black:'నలుపు',white:'తెలుపు',violet:'వయొలెట్',indigo:'ఇండిగో'},
+  gu:{red:'લાલ',blue:'વાદળી',green:'લીલો',yellow:'પીળો',orange:'નારંગી',pink:'પિંક',brown:'તપખીર',black:'કાળો',white:'સફેદ',violet:'વાયોલેટ',indigo:'ઇન્ડિગો'},
+  as:{ red:'লাল', blue:'নীলা', green:'সেউজ', yellow:'হলুদ', orange:'কমলা', pink:'গোলাপী', brown:'বাদামী', black:'ক’লা', white:'সাদা', violet:'বেগুনি', indigo:'ইণ্ডিগো' },
+  ml:{ red:'ചുവപ്പ്', blue:'നീല', green:'പച്ച', yellow:'മഞ്ഞ', orange:'ഓറഞ്ച്', pink:'പിങ്ക്', brown:'തവിട്ട്', black:'കറുപ്പ്', white:'വെളുപ്പ്', violet:'വയലറ്റ്', indigo:'ഇണ്ടിഗോ' },
+  pa:{ red:'ਲਾਲ', blue:'ਨੀਲਾ', green:'ਹਰਾ', yellow:'పీਲਾ', orange:'ਨਾਰੰਗੀ', pink:'ਗੁਲਾਬੀ', brown:'ਭੂਰਾ', black:'ਕਾਲਾ', white:'ਚਿੱਟਾ', violet:'ਬੈੰਗਨੀ', indigo:'ਇੰਡਿਗੋ' },
+  or:{ red:'ଲାଲ', blue:'ନୀଳ', green:'ସବୁଜ', yellow:'ହଳଦିଆ', orange:'କମଳା', pink:'ଗୋଲାପୀ', brown:'ବାଦାମୀ', black:'କଳା', white:'ଧଳା', violet:'ବଇଗଣୀ', indigo:'ଇଣ୍ଡିଗୋ' },
+  mr:{ red:'लाल', blue:'निळा', green:'हिरवा', yellow:'पिवळा', orange:'नारिंगी', pink:'गुलाबी', brown:'तपकिरी', black:'काळा', white:'पांढरा', violet:'जांभळा', indigo:'इंडिगो' },
+  ja:{red:'赤',blue:'青',green:'緑',yellow:'黄',orange:'オレンジ',pink:'ピンク',brown:'茶色',black:'黒',white:'白',violet:'バイオレット',indigo:'インディゴ'},
+  de:{red:'rot',blue:'blau',green:'grün',yellow:'gelb',orange:'orange',pink:'rosa',brown:'braun',black:'schwarz',white:'weiß',violet:'violett',indigo:'indigo'},
+  ko:{red:'빨강',blue:'파랑',green:'초록',yellow:'노랑',orange:'주황',pink:'분홍',brown:'갈색',black:'검정',white:'하양',violet:'바이올렛',indigo:'인디고'},
+  fr:{red:'rouge',blue:'bleu',green:'vert',yellow:'jaune',orange:'orange',pink:'rose',brown:'marron',black:'noir',white:'blanc',violet:'violet',indigo:'indigo'},
+  es:{red:'rojo',blue:'azul',green:'verde',yellow:'amarillo',orange:'naranja',pink:'rosa',brown:'marrón',black:'negro',white:'blanco',violet:'violeta',indigo:'índigo'}
+};
+
+/* === Audio/Speech === */
+var voices=[], voice=null, currentLang='en', soundOn=true;
+function speak(text){
+  if(!soundOn || !voice || !text) return;
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.voice=voice; u.rate=1; u.pitch=1;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function nameFor(key){ var pack=L10N[currentLang]||L10N.en; return pack[key]||key; }
+
+/* === Bengali MP3: ONLY CHANGE === */
+function speakColorKey(key, text){
+  if(!text) text = (L10N[currentLang] && L10N[currentLang][key]) ? L10N[currentLang][key] : key;
+  if(currentLang === 'bn' && soundOn){
+    try{
+      var audio = new Audio('audio/bn/' + key + '.mp3'); // relative path
+      var p = audio.play();
+      if(p !== undefined){
+        p.catch(function(){ speak(text); }); // fallback to TTS
+      }
+      return;
+    }catch(e){
+      speak(text);
+      return;
+    }
+  }
+  speak(text);
+}
+
+/* === Messages etc. (unchanged) === */
+var POSITIVE=["Brilliant!","Great job!","You nailed it!","Super!","Awesome move!","Fantastic!","Spot on!","You're on fire!","Nice pick!","Keep it up!","Well done!","Perfect!","Excellent!","Sharp eyes!","Love that focus!","Crushing it!","That’s the spirit!","Beautiful tap!","You’re unstoppable!","Champion energy!"];
+var TRY_AGAIN=["Almost there—try again!","So close!","Keep going—you’ve got this!","Good effort—try once more!","No worries, next one!","Eyes on the prize!","You can do it!","Stay sharp!","Keep tapping—practice wins!","One more try!","We learn by trying!","No problem—next one is yours!","Steady now, you’ve got it!","Take a breath and go again!","It’s all practice—well done!","Trust your eyes!","Great spirit!","Tap again with confidence!","Strong effort!","Keep the rhythm!"];
+var END_LOW=["You are my buddy ❤️ Let's play again, shall we?","Great try! Next round will be even better.","You did wonderful — score doesn’t matter, fun does!","Cheer up champ! Let’s go again soon.","Every tap counts, you’re improving already!","You are awesome — the score is just a number.","Keep shining, you’re my favorite player!","Smile! Games are for joy, not just points.","Fantastic spirit! Let’s try one more time.","High five 🤚 You played with heart!","Your energy is amazing — keep tapping!","Friend, you’re building skills every round.","No worries — we’re in this together!","You brighten the game — keep going!","A little score, but a big heart!","The fun matters more than the score!","Play again? I’ll cheer you louder!","Next time will be your round!","You’re a true buddy gamer!","Keep that smile, champion!"];
+var END_HIGH=["Wow! You crushed it! 🏆","Amazing score — you’re a star!","Champion vibes only ✨ Keep it up!","Fantastic! That’s true focus.","You’re unstoppable — what a round!","Incredible tapping skills 👏","Brilliant memory and speed!","Legendary score — salute!","Excellent! You’ve set a new bar.","Superb — you made me proud!","Victory dance time 💃🕺","You’re glowing with success!","A masterpiece of tapping!","Bravo! A champion indeed.","High score, high spirit!","Unstoppable energy — wow!","Keep rocking superstar!","That’s record-breaking speed!","Phenomenal! You inspire me!","Hall of fame performance!"];
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* === Game state (unchanged) === */
+var playing=false, secs=60, score=0, target=0, timer=null, level=1;
+var grid=document.getElementById('grid'), statusEl=document.getElementById('status');
+function updateStatus(m){ statusEl.textContent='Status: '+m; }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function labelTone(hex){ var r=parseInt(hex.substr(1,2),16),g=parseInt(hex.substr(3,2),16),b=parseInt(hex.substr(5,2),16); var L=0.2126*(r/255)+0.7152*(g/255)+0.0722*(b/255); return (L<0.55)?'white':'black'; }
+
+function nextRound(){ target=Math.floor(Math.random()*COLORS.length); speakColorKey(COLORS[target][0], nameFor(COLORS[target][0])); rebuildTiles(); }
+function rebuildTiles(){
+  grid.innerHTML='';
+  var order=shuffle(COLORS.slice());
+  order.forEach(function(item){
+    var key=item[0], bg=item[1], d=document.createElement('button');
+    d.className='cell'; d.style.background=bg; d.style.borderColor='#00000020'; d.style.width='100%';
+    if(level===1){
+      var tone=labelTone(bg), span=document.createElement('span');
+      span.className='label3d '+(tone==='white'?'white':'black');
+      span.textContent=key.toUpperCase();
+      d.appendChild(span);
+    }
+    d.onclick=function(){ choose(key===COLORS[target][0]); };
+    grid.appendChild(d);
+  });
+}
+function choose(ok){
+  if(!playing) return;
+  if(ok){ score++; document.getElementById('s').textContent=score; updateStatus('Score: '+score+' — '+pick(POSITIVE)); nextRound(); }
+  else  { score=Math.max(0,score-1); document.getElementById('s').textContent=score; updateStatus('Score: '+score+' — '+pick(TRY_AGAIN)); }
+}
+
+/* === Controls (unchanged) === */
+document.getElementById('say').onclick=function(){ if(playing) speakColorKey(COLORS[target][0], nameFor(COLORS[target][0])); };
+document.getElementById('start').onclick=function(){
+  playing=true; secs=60; score=0;
+  document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs;
+  var startLine="Let’s play — gently tap on me!";
+  updateStatus("Game started. Language: "+readableLangLabel(currentLang, voice)+" • Score: 0 — "+startLine);
+  speak(startLine); // start TTS stays as before
+  nextRound();
+  if(timer) clearInterval(timer);
+  timer=setInterval(function(){
+    secs--; document.getElementById('t').textContent=secs;
+    if(secs<=0){
+      clearInterval(timer); playing=false;
+      var msg=(score<5?pick(END_LOW):pick(END_HIGH));
+      var endLine="Time’s up! Final score: "+score+". "+msg;
+      updateStatus("⏰ "+endLine);
+      speak(endLine); // end TTS stays as before
+    }
+  },1000);
+};
+document.getElementById('mute').onclick=function(e){ soundOn=!soundOn; e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off'; };
+document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 1 (Labels) selected. Let’s play, gently tap on me!"); };
+document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 2 (No Labels) selected. Let’s play, gently tap on me!"); };
+
+/* === Language bar (unchanged) === */
+var langbar=document.getElementById('langbar');
+function readableLangLabel(code,v){
+  if(code==='en'&&v){ var L=(v.lang||'').toLowerCase();
+    if(L.startsWith('en-gb')) return 'English (UK)';
+    if(L.startsWith('en-us')) return 'English (US)';
+    if(L.startsWith('en-in')) return 'English (India)';
+    return 'English';
+  }
+  var f=LANG_CANDIDATES.find(x=>x[0]===code); return f?f[1]:code;
+}
+function refreshVoices(){
+  try{ voices=window.speechSynthesis?window.speechSynthesis.getVoices():[]; }catch(e){ voices=[]; }
+  langbar.innerHTML='';
+  LANG_CANDIDATES.forEach(function(cfg){
+    var code=cfg[0], label=cfg[1], tags=cfg[2];
+    var v=voices.find(function(vc){ return tags.some(function(t){ return (vc.lang||'').toLowerCase().startsWith(t.toLowerCase()); }); });
+    if(v){
+      var b=document.createElement('button'); b.className='lbtn'; b.textContent=(code==='en')?'English':label; b.dataset.code=code;
+      b.onclick=function(){
+        currentLang=code; voice=v;
+        Array.prototype.forEach.call(langbar.children,x=>x.classList.remove('active'));
+        b.classList.add('active');
+        updateStatus('Language: '+readableLangLabel(code,v)+' • Voice: '+(v.name||v.lang)+' • Score: '+score);
+        if(playing) nextRound();
+      };
+      langbar.appendChild(b);
+      if(code==='en' && !document.querySelector('.lbtn.active')){ b.classList.add('active'); currentLang='en'; voice=v; }
+    }
+  });
+  updateStatus(langbar.children.length? 'Voices ready ('+langbar.children.length+' languages). Press Start!' : 'No compatible voices detected. You can still play by tapping colors.');
+}
+try{
+  if(window.speechSynthesis){
+    window.speechSynthesis.onvoiceschanged=refreshVoices;
+    setTimeout(refreshVoices,200);
+  }else{
+    updateStatus('Speech synthesis not available in this browser.');
+  }
+}catch(e){ updateStatus('Speech init error.'); }
+</script>
+</body>
+</html>
+
 
