@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Listen & Tap — Multilingual (Levels + Bengali MP3)</title>
+<title>Listen & Tap — Multilingual (Levels + Spoken Start/End)</title>
 <style>
   *,*::before,*::after{ box-sizing:border-box }
   html,body{ height:100% }
@@ -50,7 +50,7 @@
   <p id="status" class="pill">Status: Press Start to begin — <b>Let’s play, gently tap on me!</b></p>
 
   <footer class="smallnote">
-    ℹ️ Bengali uses your own MP3 recordings stored in <code>/animesh-him/audio/bn/</code>.<br>
+    ℹ️ If you install <b>Google Speech Services</b> and add Bengali, Gujarati, Spanish, etc. as a <i>system language</i>, Chrome can use a native voice.<br>
     💬 If you don’t see your language available, comment on the Games webpage — I will include it. Have fun!
   </footer>
 </div>
@@ -59,47 +59,51 @@
 /* === Colors === */
 var COLORS=[['red','#e63946'],['blue','#277da1'],['green','#2a9d8f'],['yellow','#ffd166'],['orange','#f4a261'],['pink','#ff6ea9'],['brown','#8d5524'],['black','#111111'],['white','#eeeeee'],['violet','#7F00FF'],['indigo','#4B0082']];
 
-/* === Languages: English first, others alphabetical === */
+/* === Languages === */
 var BASE_LANGS=[
   ['en','English',['en-GB','en-US','en-IN','en']],
-  ['as','Assamese',['as-IN','as']], ['bn','Bengali',['bn-IN','bn-BD','bn']],
-  ['de','German',['de-DE','de']], ['es','Spanish',['es-ES','es-MX','es']],
-  ['fr','French',['fr-FR','fr']], ['gu','Gujarati',['gu-IN','gu']],
-  ['hi','Hindi',['hi-IN','hi']], ['ja','Japanese',['ja-JP','ja']],
-  ['kn','Kannada',['kn-IN','kn']], ['ko','Korean',['ko-KR','ko']],
-  ['ml','Malayalam',['ml-IN','ml']], ['mr','Marathi',['mr-IN','mr']],
-  ['or','Odia',['or-IN','or']], ['pa','Punjabi',['pa-IN','pa']],
-  ['ta','Tamil',['ta-IN','ta']], ['te','Telugu',['te-IN','te']]
+  ['bn','Bengali',['bn-IN','bn-BD','bn']]
 ];
-var LANG_CANDIDATES=(function(){var en=BASE_LANGS.find(x=>x[0]==='en');var others=BASE_LANGS.filter(x=>x[0]!=='en').sort((a,b)=>a[1].localeCompare(b[1]));return [en].concat(others);})();
+var LANG_CANDIDATES=BASE_LANGS;
 
 /* === Localized names === */
 var L10N={
   en:{red:'red',blue:'blue',green:'green',yellow:'yellow',orange:'orange',pink:'pink',brown:'brown',black:'black',white:'white',violet:'violet',indigo:'indigo'},
-  bn:{ red:'লাল', blue:'নীল', green:'সবুজ', yellow:'হলুদ', orange:'কমলা', pink:'গোলাপি', brown:'বাদামী', black:'কালো', white:'সাদা', violet:'জামুনি', indigo:'নীলচে' },
-  // … other languages same as before
+  bn:{ red:'লাল', blue:'নীল', green:'সবুজ', yellow:'হলুদ', orange:'কমলা', pink:'গোলাপি', brown:'বাদামী', black:'কালো', white:'সাদা', violet:'জামুনি', indigo:'নীলচে' }
 };
 
 /* === Audio/Speech === */
 var voices=[], voice=null, currentLang='en', soundOn=true;
-function playAudioIfBengali(key){
-  if(currentLang!=='bn') return false;
-  var audio=new Audio('animesh-him/audio/bn/'+key+'.mp3');
-  audio.play(); return true;
-}
-function speak(text,key){
-  if(!soundOn||!text) return;
-  if(currentLang==='bn' && key){ playAudioIfBengali(key); }
-  else if(voice){ var u=new SpeechSynthesisUtterance(text); u.voice=voice; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); }
-}
-function nameFor(key){ var pack=L10N[currentLang]||L10N.en; return pack[key]||key; }
 
-/* === Messages === */
-var POSITIVE=["Great!","Super!","Brilliant!","Awesome!","Perfect!"];
-var TRY_AGAIN=["Try again!","Almost!","Keep going!","Next one!"];
-var END_LOW=["You are my buddy ❤️ Let's play again, shall we?","Good effort, friend!","Fun matters more than score!"];
-var END_HIGH=["Wow! You crushed it! 🏆","Amazing score — you’re a star!","Champion vibes only ✨"];
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function speak(text){
+  if(!soundOn || !voice || !text) return;
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.voice=voice; u.rate=1; u.pitch=1;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* --- New: MP3 support for Bengali --- */
+function speakColorKey(key, text){
+  if(!text) text = (L10N[currentLang] && L10N[currentLang][key]) ? L10N[currentLang][key] : key;
+  if(currentLang === 'bn' && soundOn){
+    try{
+      var audio = new Audio('animesh-him/audio/bn/' + key + '.mp3');
+      var p = audio.play();
+      if(p !== undefined){
+        p.catch(function(){ speak(text); });
+      }
+      return;
+    }catch(e){
+      speak(text);
+      return;
+    }
+  }
+  speak(text);
+}
+
+function nameFor(key){ var pack=L10N[currentLang]||L10N.en; return pack[key]||key; }
 
 /* === Game state === */
 var playing=false, secs=60, score=0, target=0, timer=null, level=1;
@@ -108,63 +112,81 @@ function updateStatus(m){ statusEl.textContent='Status: '+m; }
 function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function labelTone(hex){ var r=parseInt(hex.substr(1,2),16),g=parseInt(hex.substr(3,2),16),b=parseInt(hex.substr(5,2),16); var L=0.2126*(r/255)+0.7152*(g/255)+0.0722*(b/255); return (L<0.55)?'white':'black'; }
 
-function nextRound(){ target=Math.floor(Math.random()*COLORS.length); speak(nameFor(COLORS[target][0]),COLORS[target][0]); rebuildTiles(); }
+function nextRound(){ target=Math.floor(Math.random()*COLORS.length); speakColorKey(COLORS[target][0],nameFor(COLORS[target][0])); rebuildTiles(); }
 function rebuildTiles(){
   grid.innerHTML='';
   var order=shuffle(COLORS.slice());
   order.forEach(function(item){
     var key=item[0], bg=item[1], d=document.createElement('button');
-    d.className='cell'; d.style.background=bg;
-    if(level===1){ var tone=labelTone(bg), span=document.createElement('span'); span.className='label3d '+(tone==='white'?'white':'black'); span.textContent=key.toUpperCase(); d.appendChild(span); }
+    d.className='cell'; d.style.background=bg; d.style.borderColor='#00000020'; d.style.width='100%';
+    if(level===1){
+      var tone=labelTone(bg), span=document.createElement('span');
+      span.className='label3d '+(tone==='white'?'white':'black');
+      span.textContent=key.toUpperCase();
+      d.appendChild(span);
+    }
     d.onclick=function(){ choose(key===COLORS[target][0]); };
     grid.appendChild(d);
   });
 }
 function choose(ok){
   if(!playing) return;
-  if(ok){ score++; document.getElementById('s').textContent=score; updateStatus('Score: '+score+' — '+pick(POSITIVE)); nextRound(); }
-  else  { score=Math.max(0,score-1); document.getElementById('s').textContent=score; updateStatus('Score: '+score+' — '+pick(TRY_AGAIN)); }
+  if(ok){ score++; document.getElementById('s').textContent=score; updateStatus('Score: '+score); nextRound(); }
+  else  { score=Math.max(0,score-1); document.getElementById('s').textContent=score; updateStatus('Score: '+score+' — Try again!'); }
 }
 
 /* === Controls === */
-document.getElementById('say').onclick=function(){ if(playing) speak(nameFor(COLORS[target][0]),COLORS[target][0]); };
+document.getElementById('say').onclick=function(){ if(playing) speakColorKey(COLORS[target][0],nameFor(COLORS[target][0])); };
 document.getElementById('start').onclick=function(){
   playing=true; secs=60; score=0;
   document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs;
   var startLine="Let’s play — gently tap on me!";
-  updateStatus("Game started. • Score: 0 — "+startLine); speak(startLine);
+  updateStatus("Game started. Language: "+currentLang+" • Score: 0 — "+startLine);
+  speak(startLine);
   nextRound();
   if(timer) clearInterval(timer);
-  timer=setInterval(function(){ secs--; document.getElementById('t').textContent=secs;
-    if(secs<=0){ clearInterval(timer); playing=false; var msg=(score<5?pick(END_LOW):pick(END_HIGH)); var endLine="Time’s up! Final score: "+score+". "+msg; updateStatus("⏰ "+endLine); speak(endLine); }
+  timer=setInterval(function(){
+    secs--; document.getElementById('t').textContent=secs;
+    if(secs<=0){
+      clearInterval(timer); playing=false;
+      var endLine="Time’s up! Final score: "+score;
+      updateStatus("⏰ "+endLine);
+      speak(endLine);
+    }
   },1000);
 };
 document.getElementById('mute').onclick=function(e){ soundOn=!soundOn; e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off'; };
-document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 1 (Labels) selected. Let’s play, gently tap on me!"); };
-document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 2 (No Labels) selected. Let’s play, gently tap on me!"); };
+document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); };
+document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); };
 
 /* === Language bar === */
 var langbar=document.getElementById('langbar');
-function readableLangLabel(code,v){
-  if(code==='en'&&v){ var L=(v.lang||'').toLowerCase(); if(L.startsWith('en-gb')) return 'English (UK)'; if(L.startsWith('en-us')) return 'English (US)'; if(L.startsWith('en-in')) return 'English (India)'; return 'English'; }
-  var f=LANG_CANDIDATES.find(x=>x[0]===code); return f?f[1]:code;
-}
 function refreshVoices(){
-  voices=window.speechSynthesis?window.speechSynthesis.getVoices():[];
+  try{ voices=window.speechSynthesis?window.speechSynthesis.getVoices():[]; }catch(e){ voices=[]; }
   langbar.innerHTML='';
   LANG_CANDIDATES.forEach(function(cfg){
     var code=cfg[0], label=cfg[1], tags=cfg[2];
-    var v=voices.find(vc=>tags.some(t=>(vc.lang||'').toLowerCase().startsWith(t.toLowerCase())));
-    if(v||code==='bn'){ // Bengali always included (MP3)
-      var b=document.createElement('button'); b.className='lbtn'; b.textContent=(code==='en')?'English':label; b.dataset.code=code;
-      b.onclick=function(){ currentLang=code; voice=v||null; [...langbar.children].forEach(x=>x.classList.remove('active')); b.classList.add('active'); updateStatus('Language: '+readableLangLabel(code,v)+' • Score: '+score); if(playing) nextRound(); };
-      langbar.appendChild(b);
-      if(code==='en' && !document.querySelector('.lbtn.active')){ b.classList.add('active'); currentLang='en'; voice=v; }
-    }
+    var v=voices.find(function(vc){ return tags.some(function(t){ return (vc.lang||'').toLowerCase().startsWith(t.toLowerCase()); }); });
+    var b=document.createElement('button'); b.className='lbtn'; b.textContent=(code==='en')?'English':label; b.dataset.code=code;
+    b.onclick=function(){
+      currentLang=code; voice=v;
+      Array.prototype.forEach.call(langbar.children,x=>x.classList.remove('active'));
+      b.classList.add('active');
+      updateStatus('Language: '+label+' • Score: '+score);
+      if(playing) nextRound();
+    };
+    langbar.appendChild(b);
+    if(code==='en' && !document.querySelector('.lbtn.active')){ b.classList.add('active'); currentLang='en'; voice=v; }
   });
 }
-if(window.speechSynthesis){ window.speechSynthesis.onvoiceschanged=refreshVoices; setTimeout(refreshVoices,200); }
-else{ updateStatus('Speech synthesis not available.'); }
+try{
+  if(window.speechSynthesis){
+    window.speechSynthesis.onvoiceschanged=refreshVoices;
+    setTimeout(refreshVoices,200);
+  }else{
+    updateStatus('Speech synthesis not available in this browser.');
+  }
+}catch(e){ updateStatus('Speech init error.'); }
 </script>
 </body>
 </html>
