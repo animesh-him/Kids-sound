@@ -184,8 +184,8 @@ document.getElementById('start').onclick=function(){
   },1000);
 };
 document.getElementById('mute').onclick=function(e){ soundOn=!soundOn; e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off'; };
-document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 1 (Labels) selected. Let’s play, gently tap on me!"); };
-document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 2 (No Labels) selected. Let’s play, gently tap on me!"); };
+document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 1 (Labels) selected. Let’s play!"); };
+document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 2 (No Labels) selected. Let’s play!"); };
 
 /* === Language bar (unchanged) === */
 var langbar=document.getElementById('langbar');
