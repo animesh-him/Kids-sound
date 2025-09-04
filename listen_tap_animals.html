@@ -64,7 +64,7 @@
     <button class="btn alt" id="train">📚 Training</button>
   </div>
   <div id="grid" class="grid"></div>
-  <p id="status" class="pill">Status: Press Start — <b>Let’s play, gently tap on me!</b></p>
+  <p id="status" class="pill">Status: Press Start — <b>Let’s play!</b></p>
   <footer class="smallnote">
     ℹ️ For the most natural voices, install <b>Google Speech Services</b> and add your language as a system language so Chrome can use a native voice.<br>
     💬 If you don’t see your language available, comment on the Games webpage — I will include it. Have fun!
@@ -91,38 +91,16 @@ var ANIMALS = [
 
 var BASE_LANGS=[
   ['en','English',['en-GB','en-US','en-IN','en']],
-  ['as','Assamese',['as-IN','as']],
-  ['bn','Bengali',['bn-IN','bn-BD','bn']],
   ['de','German',['de-DE','de']],
   ['es','Spanish',['es-ES','es-MX','es']],
   ['fr','French',['fr-FR','fr']],
-  ['gu','Gujarati',['gu-IN','gu']],
-  ['hi','Hindi',['hi-IN','hi']],
   ['ja','Japanese',['ja-JP','ja']],
-  ['kn','Kannada',['kn-IN','kn']],
   ['ko','Korean',['ko-KR','ko']],
-  ['ml','Malayalam',['ml-IN','ml']],
-  ['mr','Marathi',['mr-IN','mr']],
-  ['or','Odia',['or-IN','or']],
-  ['pa','Punjabi',['pa-IN','pa']],
-  ['ta','Tamil',['ta-IN','ta']],
-  ['te','Telugu',['te-IN','te']]
-];
+ ];
 var LANG_CANDIDATES=(function(){var en=BASE_LANGS.find(x=>x[0]==='en');var others=BASE_LANGS.filter(x=>x[0]!=='en').sort((a,b)=>a[1].localeCompare(b[1]));return [en].concat(others);})();
 
 var L10N={
   en:Object.fromEntries(ANIMALS.map(([k])=>[k,k])),
-  bn:{tiger:'বাঘ',lion:'সিংহ',elephant:'হাতি',giraffe:'জিরাফ',zebra:'জেব্রা',horse:'ঘোড়া',cow:'গরু',goat:'ছাগল',dog:'কুকুর',cat:'বিড়াল',rabbit:'খরগোশ',monkey:'বানর',camel:'উট',turtle:'কচ্ছপ',parrot:'তোতা',dolphin:'ডলফিন'},
-  hi:{tiger:'बाघ',lion:'सिंह',elephant:'हाथी',giraffe:'जिराफ़',zebra:'ज़ेब्रा',horse:'घोड़ा',cow:'गाय',goat:'बकरी',dog:'कुत्ता',cat:'बिल्ली',rabbit:'खरगोश',monkey:'बंदर',camel:'ऊँट',turtle:'कछुआ',parrot:'तोता',dolphin:'डॉल्फ़िन'},
-  kn:{tiger:'ಹುಲಿ',lion:'ಸಿಂಹ',elephant:'ಆನೆ',giraffe:'ಜಿರಾಫೆ',zebra:'ಜೀಬ್ರಾ',horse:'ಕುದುರೆ',cow:'ಹಸು',goat:'ಮೇಕೆ',dog:'ನಾಯಿ',cat:'ಬೆಕ್ಕು',rabbit:'ಮೊಲ',monkey:'ಕೋತಿ',camel:'ಒಂಟೆ',turtle:'ಆಮೆ',parrot:'ಗಿಳಿ',dolphin:'ಡಾಲ್ಫಿನ್'},
-  ta:{tiger:'புலி',lion:'சிங்கம்',elephant:'யானை',giraffe:'ஜிராஃப்',zebra:'வரிக்குதிரை',horse:'குதிரை',cow:'பசு',goat:'ஆடு',dog:'நாய்',cat:'பூனை',rabbit:'முயல்',monkey:'குரங்கு',camel:'ஒட்டகம்',turtle:'ஆமை',parrot:'கிளி',dolphin:'டால்பின்'},
-  te:{tiger:'పులి',lion:'సింహం',elephant:'ఏనుగు',giraffe:'జిరాఫీ',zebra:'జీబ్రా',horse:'గుర్రం',cow:'ఆవు',goat:'మేక',dog:'కుక్క',cat:'పిల్లి',rabbit:'కుందేలు',monkey:'కోతి',camel:'ఒంటె',turtle:'తాబేలు',parrot:'చిలుక',dolphin:'డాల్ఫిన్'},
-  gu:{tiger:'વાઘ',lion:'સિંહ',elephant:'હાથી',giraffe:'જીરાફ',zebra:'ઝીબ્રા',horse:'ઘોડો',cow:'ગાય',goat:'બકરી',dog:'કૂતરો',cat:'બિલાડી',rabbit:'સસલું',monkey:'વાંદરું',camel:'ઊંટ',turtle:'કાચબો',parrot:'પોપટ',dolphin:'ડોલ્ફિન'},
-  as:{tiger:'বাঘ',lion:'সিংহ',elephant:'হাতী',giraffe:'জিৰাফ',zebra:'জেব্ৰা',horse:'ঘোঁৰা',cow:'গাই',goat:'ছাগলী',dog:'কুকুৰ',cat:'বিলাই',rabbit:'খৰগোশ',monkey:'বান্দৰ',camel:'উট',turtle:'কচ্ছপ',parrot:'টিয়া',dolphin:'ডলফিন'},
-  ml:{tiger:'കടുവ',lion:'സിംഹം',elephant:'ആന',giraffe:'ജിറാഫ്',zebra:'സെബ്ര',horse:'കുതിര',cow:'പശു',goat:'ആട്',dog:'നായ',cat:'പൂച്ച',rabbit:'മുയൽ',monkey:'കുരങ്ങ്',camel:'ഒട്ടകം',turtle:'ആമ',parrot:'തത്ത',dolphin:'ഡോൾഫിൻ'},
-  pa:{tiger:'ਬਾਘ',lion:'ਸਿੰਘ',elephant:'ਹਾਥੀ',giraffe:'ਜਿਰਾਫ਼',zebra:'ਜ਼ੇਬਰਾ',horse:'ਘੋੜਾ',cow:'ਗਾਂ',goat:'ਬੱਕਰੀ',dog:'ਕੁੱਤਾ',cat:'ਬਿੱਲੀ',rabbit:'ਖਰਗੋਸ਼',monkey:'ਬਾਂਦਰ',camel:'ਊਂਟ',turtle:'ਕੱਛੂਆ',parrot:'ਤੋਤਾ',dolphin:'ਡੋਲਫਿਨ'},
-  or:{tiger:'ବାଘ',lion:'ସିଂହ',elephant:'ହାତୀ',giraffe:'ଜିରାଫ',zebra:'ଜିବ୍ରା',horse:'ଘୋଡ଼ା',cow:'ଗାଈ',goat:'ଛେଳି',dog:'କୁକୁର',cat:'ବିଲାଡ଼ି',rabbit:'ଖରଗୋଶ',monkey:'ବାନର',camel:'ଉଣ୍ଟ',turtle:'କଚ୍ଛପ',parrot:'ଟିଆ',dolphin:'ଡଲଫିନ'},
-  mr:{tiger:'वाघ',lion:'सिंह',elephant:'हत्ती',giraffe:'जिराफ',zebra:'झेब्रा',horse:'घोडा',cow:'गाय',goat:'शेळी',dog:'कुत्रा',cat:'मांजर',rabbit:'ससा',monkey:'माकड',camel:'उंट',turtle:'कासव',parrot:'पोपट',dolphin:'डॉल्फिन'},
   ja:{tiger:'虎',lion:'ライオン',elephant:'象',giraffe:'キリン',zebra:'シマウマ',horse:'馬',cow:'牛',goat:'ヤギ',dog:'犬',cat:'猫',rabbit:'ウサギ',monkey:'猿',camel:'ラクダ',turtle:'亀',parrot:'オウム',dolphin:'イルカ'},
   de:{tiger:'Tiger',lion:'Löwe',elephant:'Elefant',giraffe:'Giraffe',zebra:'Zebra',horse:'Pferd',cow:'Kuh',goat:'Ziege',dog:'Hund',cat:'Katze',rabbit:'Kaninchen',monkey:'Affe',camel:'Kamel',turtle:'Schildkröte',parrot:'Papagei',dolphin:'Delfin'},
   ko:{tiger:'호랑이',lion:'사자',elephant:'코끼리',giraffe:'기린',zebra:'얼룩말',horse:'말',cow:'소',goat:'염소',dog:'개',cat:'고양이',rabbit:'토끼',monkey:'원숭이',camel:'낙타',turtle:'거북이',parrot:'앵무새',dolphin:'돌고래'},
@@ -168,7 +146,7 @@ function choose(ok){
 document.getElementById('say').onclick=function(){ if(playing) speakText(nameFor(ANIMALS[target][0])); };
 document.getElementById('start').onclick=function(){
   playing=true; secs=60; score=0; document.getElementById('s').textContent=0; document.getElementById('t').textContent=secs;
-  var startLine="Let’s play — gently tap on me!"; updateStatus("Game started. Language: "+readableLangLabel(currentLang, voice)+" • Score: 0 — "+startLine); speakText(startLine);
+  var startLine="Let’s play!"; updateStatus("Game started. Language: "+readableLangLabel(currentLang, voice)+" • Score: 0 — "+startLine); speakText(startLine);
   nextRound();
   if(timer) clearInterval(timer);
   timer=setInterval(function(){
@@ -178,8 +156,8 @@ document.getElementById('start').onclick=function(){
 };
 document.getElementById('mute').onclick=function(e){ soundOn=!soundOn; e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off'; };
 
-document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 1 (Labels below) selected. Let’s play, gently tap on me!"); };
-document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 2 (Emoji Only) selected. Let’s play, gently tap on me!"); };
+document.getElementById('lvl1').onclick=function(){ level=1; this.classList.add('active'); document.getElementById('lvl2').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 1 (Labels below) selected. Let’s play!"); };
+document.getElementById('lvl2').onclick=function(){ level=2; this.classList.add('active'); document.getElementById('lvl1').classList.remove('active'); if(playing) rebuildTiles(); updateStatus("Level 2 (Emoji Only) selected. Let’s play!"); };
 
 var training = document.getElementById('training'); var tgrid = document.getElementById('tgrid');
 document.getElementById('train').onclick = openTraining; document.getElementById('closeTrain').onclick = closeTraining; document.getElementById('speakAll').onclick = speakAllTraining;
